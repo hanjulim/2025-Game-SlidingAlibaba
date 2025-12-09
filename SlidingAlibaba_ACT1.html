@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>알리바바의 긴급 탈출: 슬라이딩 퍼즐 (출구 고정)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /*
+         * Custom Styles for the Sliding Puzzle Game
+         * Theme: Deep Cave / Emergency Escape
+         */
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap');
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #2c2c2c; /* Deep Cave Theme */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        #game-container {
+            background-color: #1a1a1a;
+            border: 6px solid #b8860b; /* Gold border */
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.7);
+            border-radius: 16px;
+            padding: 20px;
+            color: white;
+            max-width: 400px;
+            width: 100%;
+            transition: all 0.3s ease-in-out;
+        }
+        #status-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding: 10px 15px;
+            background-color: #333;
+            border-radius: 8px;
+            box-shadow: inset 0 0 5px rgba(255, 255, 255, 0.1);
+        }
+        #timer {
+            font-size: 1.8rem;
+            font-weight: 900;
+            color: #ffeb3b; /* Bright Gold */
+            min-width: 40px;
+            text-align: right;
+        }
+        #message {
+            min-height: 60px; /* Increased height for clearer instruction */
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 1rem;
+            text-align: center;
+            margin-bottom: 15px;
+            font-weight: 700;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #grid-container {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 5px;
+            margin: 0 auto;
+        }
+        
+        /* === TILE SIZE MODIFICATION: Use padding-top 100% to ensure a perfect square === */
+        .tile {
+            width: 100%; /* Fill the grid column */
+            padding-top: 100%; /* Makes height equal to width (Aspect Ratio 1:1) */
+            height: 0; /* Crucial for the padding hack to work */
+            position: relative; /* Needed to position tile-content */
+            
+            /* General tile styles */
+            display: block; /* Override display:flex for padding hack */
+            cursor: pointer;
+            border-radius: 6px;
+            transition: transform 0.2s, background-color 0.2s;
+            user-select: none;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+        }
+        
+        /* Content wrapper for perfect centering inside the square tile */
+        .tile-content {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex; /* Use flex to center the content */
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 28px;
+        }
+        /* === END TILE SIZE MODIFICATION === */
+        
+        /* Tile Styles */
+        .tile.player { background-color: #e53e3e; color: white; border: 3px solid #f6ad55; animation: pulse 1s infinite alternate; } /* Alibaba (A) */
+        .tile.path-stone { background-color: #4a5568; color: #cbd5e0; border: 2px solid #555; } /* Path (P) */
+        .tile.magic-item { background-color: #3f51b5; color: #e8eaf6; border: 2px solid #7986cb; } /* 주문 물품 (M) */
+        
+        /* Empty tile styles */
+        .tile.empty { 
+            background-color: #1a1a1a; 
+            cursor: default; 
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.8); 
+            border: 1px dashed #444; 
+            transition: border-color 0.3s;
+        } /* Empty (0) */
+
+        /* Interaction Visuals */
+        .tile:not(.empty):hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+        }
+        .tile.can-slide { border: 3px solid #00bfff; } /* Can-slide indicator */
+        
+        /* Fixed Spell Target Spot - Purple border */
+        .tile.target-spell { 
+            border: 4px solid #ff00ff; 
+            box-shadow: 0 0 15px rgba(255, 0, 255, 0.5);
+            animation: targetGlow 0.5s infinite alternate; 
+        } 
+        
+        /* Unlocked Exit (Empty spot with Gold border) - This is the NEW Unlocked Exit style */
+        .tile.exit-unlocked { 
+            cursor: pointer; /* Can be slid into */
+            border: 4px solid #ffeb3b; /* Bright Yellow/Gold Border */
+            box-shadow: 0 0 10px #ffd700, 0 0 20px #ffd700;
+            animation: glow 1.5s infinite alternate; 
+        }
+
+        /* Animations */
+        @keyframes pulse { from { transform: scale(1); } to { transform: scale(1.03); } }
+        @keyframes glow { from { box-shadow: 0 0 5px #ffeb3b, 0 0 10px #ffeb3b; } to { box-shadow: 0 0 10px #ffd700, 0 0 20px #ffd700; } }
+        @keyframes targetGlow { from { box-shadow: 0 0 5px #ff00ff; } to { box-shadow: 0 0 10px #ff00ff; } }
+
+
+        /* Modal for Win/Lose */
+        .modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background-color: rgba(0, 0, 0, 0.8); display: flex; 
+            justify-content: center; align-items: center; z-index: 1000;
+        }
+
+        /* Responsive adjustments for mobile: Only adjust font size */
+        @media (max-width: 420px) {
+            .tile-content {
+                font-size: 24px;
+            }
+            #game-container {
+                padding: 15px;
+            }
+            #timer {
+                font-size: 1.5rem;
+            }
+        }
+        
+        .control-button {
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 700;
+            background-color: #b8860b;
+            color: white;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+        .control-button:hover {
+            background-color: #ffd700;
+            color: #1a1a1a;
+            transform: translateY(-1px);
+        }
+    </style>
+</head>
+<body class="selection:bg-yellow-300 selection:text-gray-800">
+
+    <div id="game-container">
+        <h1 class="text-3xl font-black text-center text-yellow-300 mb-2">🏃 알리바바의 긴급 탈출</h1>
+        <p class="text-sm text-center text-gray-400 mb-4">도적들이 곧 옵니다! 주문 물품(✨)을 **우측 하단 출구**로 밀어 넣어 활성화하세요.</p>
+
+        <div id="status-bar">
+            <span class="text-sm font-medium text-gray-300">도적 도착까지:</span>
+            <span id="timer">60</span><span class="text-gray-300">초</span>
+        </div>
+
+        <div id="message" class="bg-gray-700 text-gray-200">
+            <!-- Initial message is set by JS -->
+        </div>
+
+        <div id="grid-container">
+            <!-- Grid will be populated by JavaScript -->
+        </div>
+
+        <div id="controls-buttons" class="mt-5">
+            <button id="reset-button" class="control-button w-full">🔄 게임 재시작</button>
+        </div>
+    </div>
+    
+    <!-- Win/Lose Modal Placeholder -->
+    <div id="game-modal"></div>
+
+    <script>
+        const GRID_SIZE = 4;
+        const INITIAL_TIME = 60; // 60 seconds
+        
+        // **FIXED GATE POSITION**: Row 3, Column 3 (Bottom Right)
+        const FIXED_GATE_POS = { r: GRID_SIZE - 1, c: GRID_SIZE - 1 };
+        
+        let grid = [];
+        let playerPos = { r: 0, c: 0 };
+        let emptyPos = { r: 0, c: 0 };
+        let gatePos = FIXED_GATE_POS; // Use the fixed position
+        let isExitUnlocked = false;
+        let timerInterval;
+        let timeLeft = INITIAL_TIME;
+        let isGameActive = false;
+
+        // Tile Definitions
+        const TILE_DEFS = {
+            'A': { display: 'A', class: 'player', type: 'player' },       // Alibaba
+            'M': { display: '✨', class: 'magic-item', type: 'magic-item' }, // 주문 물품 (Magic Item/Key)
+            'P': { display: '🗿', class: 'path-stone', type: 'path' },     // 경로 타일 (Path Stone/New Obstacle)
+            '0': { display: '', class: 'empty', type: 'empty' },           // 빈칸 (Empty Slot)
+        };
+
+        const gridContainer = document.getElementById('grid-container');
+        const messageElement = document.getElementById('message');
+        const timerElement = document.getElementById('timer');
+        const resetButton = document.getElementById('reset-button');
+        const gameModal = document.getElementById('game-modal');
+
+
+        // --- Game Setup and Initialization ---
+
+        function initializeGame() {
+            stopTimer();
+            isGameActive = true;
+            isExitUnlocked = false;
+            timeLeft = INITIAL_TIME;
+            gatePos = FIXED_GATE_POS; // Reset to fixed position
+
+            timerElement.textContent = timeLeft;
+            timerElement.classList.remove('text-red-500');
+            
+            // Generate a randomly initialized grid, ensuring A, M, 0 are not at the fixed gatePos
+            grid = generateSolvableGrid();
+            
+            drawGrid();
+            startTimer();
+            // Updated instruction message
+            displayMessage('🚪 **1단계: 주문 물품(✨)을 출구 목표 지점(보라색)으로 밀어 넣어 활성화하세요.**', 'bg-red-700 text-white');
+            closeModal();
+        }
+
+        /**
+         * Generates a 4x4 grid with randomly placed A, M, 0, ensuring they are not at the fixed gatePos.
+         */
+        function generateSolvableGrid() {
+            // 1. Create an array of all possible coordinates, EXCLUDING the fixed gate position
+            const allPositions = [];
+            for (let r = 0; r < GRID_SIZE; r++) {
+                for (let c = 0; c < GRID_SIZE; c++) {
+                    if (r !== gatePos.r || c !== gatePos.c) {
+                        allPositions.push({ r, c });
+                    }
+                }
+            }
+            
+            // 2. Shuffle the remaining positions
+            allPositions.sort(() => Math.random() - 0.5);
+            
+            // 3. Assign specific tiles to the first three unique shuffled positions
+            // We need 3 slots for A, M, and 0
+            if (allPositions.length < 3) {
+                // Failsafe: Should not happen on 4x4 grid where gate is 1 spot
+                return Array.from({ length: GRID_SIZE }, () => Array(GRID_SIZE).fill('P'));
+            }
+
+            const posA = allPositions.pop();     // Alibaba 'A'
+            const posM = allPositions.pop();     // Magic Item 'M'
+            const pos0 = allPositions.pop();     // Empty Spot '0'
+            
+            // 4. Initialize the grid with Path stones ('P')
+            let currentGrid = Array.from({ length: GRID_SIZE }, () => Array(GRID_SIZE).fill('P'));
+            
+            // 5. Assign special tiles
+            currentGrid[posA.r][posA.c] = 'A';
+            currentGrid[posM.r][posM.c] = 'M';
+            currentGrid[pos0.r][pos0.c] = '0';
+            
+            // 6. Set global positions
+            playerPos = posA;
+            emptyPos = pos0;
+
+            // The gatePos (FIXED_GATE_POS) remains 'P' (Path Stone) initially, but is marked as the target visually.
+
+            return currentGrid;
+        }
+
+        // --- Core Game Logic ---
+
+        function startTimer() {
+            stopTimer();
+            timerInterval = setInterval(() => {
+                if (!isGameActive) return;
+                timeLeft--;
+                timerElement.textContent = timeLeft;
+                if (timeLeft <= 10) {
+                    timerElement.classList.add('text-red-500');
+                } else {
+                    timerElement.classList.remove('text-red-500');
+                }
+                if (timeLeft <= 0) {
+                    handleGameOver('시간 초과! 도적들에게 발각되어 붙잡혔습니다.');
+                }
+            }, 1000);
+        }
+
+        function stopTimer() {
+            clearInterval(timerInterval);
+        }
+
+        /**
+         * Handles the slide action when a tile is clicked.
+         */
+        function handleSlide(r, c) {
+            if (!isGameActive) return;
+
+            const tileKey = grid[r][c];
+            if (tileKey === '0') return;
+
+            // Check if the tile is adjacent to the empty spot
+            const dr = Math.abs(r - emptyPos.r);
+            const dc = Math.abs(c - emptyPos.c);
+            const isAdjacent = (dr === 1 && dc === 0) || (dr === 0 && dc === 1);
+
+            if (isAdjacent) {
+                const oldR = r;
+                const oldC = c;
+                let message = '타일을 밀어 경로를 조정합니다.';
+                let messageClass = 'bg-gray-700 text-gray-200';
+
+                // --- 1. Spell Activation Check & Logic (Consumption) ---
+                const isSlidingMagicItem = tileKey === 'M';
+                const isTargetingGateEmptySpot = emptyPos.r === gatePos.r && emptyPos.c === gatePos.c;
+
+                if (!isExitUnlocked && isSlidingMagicItem && isTargetingGateEmptySpot) {
+                    
+                    // **Spell Activated: M is consumed to unlock the gate.**
+                    
+                    // 1. M's original spot (oldR, oldC) becomes a Path Stone ('P'), adding an obstacle (the "Stone").
+                    grid[oldR][oldC] = 'P';
+                    
+                    // 2. The Empty spot at GATE_POS stays exactly where it is ('0'), but is now unlocked.
+                    // The 'emptyPos' variable remains {r: gatePos.r, c: gatePos.c}
+                    
+                    // 3. Set Exit Unlocked state
+                    isExitUnlocked = true;
+                    
+                    message = '✅ 마법 주문(✨) 발동! **2단계: 알리바바(A)를 활성화된 출구(빈칸, 금색 테두리)로** 밀어 넣어 탈출하세요!';
+                    messageClass = 'bg-green-600 text-white';
+                    
+                    drawGrid(); // Redraw immediately to show the new stone and unlocked gate
+                    displayMessage(message, messageClass);
+                    return; 
+                } 
+                
+                // --- 2. Standard Slide: Swap tile with empty spot ---
+                
+                // 1. Move the tile to the empty spot
+                grid[emptyPos.r][emptyPos.c] = tileKey;
+                
+                // 2. Mark the old tile spot as empty
+                grid[oldR][oldC] = '0';
+
+                // 3. If the player tile ('A') was moved, update playerPos
+                if (oldR === playerPos.r && oldC === playerPos.c) {
+                    playerPos = { r: emptyPos.r, c: emptyPos.c };
+                    message = isExitUnlocked ? '🏃 알리바바가 탈출구를 향해 움직입니다.' : '🚶 알리바바가 경로를 따라 움직입니다.';
+                    messageClass = isExitUnlocked ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-200';
+                    checkWinCondition(); // Check win if player moved
+                }
+                
+                // 4. Update emptyPos to the tile's old location
+                emptyPos = { r: oldR, c: oldC };
+
+                drawGrid();
+
+                // If the slide created the target empty spot, update message for the user
+                if (!isExitUnlocked && emptyPos.r === gatePos.r && emptyPos.c === gatePos.c) {
+                    message = '✨ **2단계: 주문 물품(✨)을 보라색 테두리 빈칸으로 밀어 넣어 출구를 활성화하세요.**';
+                    messageClass = 'bg-purple-600 text-white';
+                }
+                
+                displayMessage(message, messageClass);
+            } else {
+                displayMessage('❌ 빈칸 옆의 타일만 밀어낼 수 있습니다. (테두리가 파란색인 타일)', 'bg-yellow-500 text-black');
+            }
+        }
+
+        /**
+         * Checks if Alibaba has slid directly into the unlocked exit spot.
+         */
+        function checkWinCondition() {
+            if (!isGameActive || !isExitUnlocked) return;
+
+            // Win condition: Player's current position (after sliding into it) is the gate position
+            if (playerPos.r === gatePos.r && playerPos.c === gatePos.c) {
+                // Player successfully entered the unlocked gate spot
+                handleWin(`🎉 탈출 성공! 마법의 길을 완성하고 도적들이 오기 전에 동굴을 벗어났습니다! (남은 시간: ${timeLeft}초)`);
+            }
+        }
+
+        function handleWin(msg) {
+            isGameActive = false;
+            stopTimer();
+            displayModal('성공!', msg, 'bg-green-600');
+        }
+
+        function handleGameOver(msg) {
+            isGameActive = false;
+            stopTimer();
+            displayModal('실패!', msg, 'bg-red-700');
+        }
+
+        // --- UI Rendering ---
+
+        function drawGrid() {
+            gridContainer.style.gridTemplateColumns = `repeat(${GRID_SIZE}, 1fr)`;
+            gridContainer.innerHTML = '';
+
+            for (let r = 0; r < GRID_SIZE; r++) {
+                for (let c = 0; c < GRID_SIZE; c++) {
+                    const key = grid[r][c];
+                    const def = TILE_DEFS[key] || TILE_DEFS['0'];
+                    
+                    const tileDiv = document.createElement('div');
+                    tileDiv.className = `tile ${def.class}`;
+
+                    const contentDiv = document.createElement('div');
+                    contentDiv.className = 'tile-content';
+                    contentDiv.textContent = def.display;
+                    tileDiv.appendChild(contentDiv);
+                    
+                    tileDiv.dataset.row = r;
+                    tileDiv.dataset.col = c;
+                    
+                    const dr = Math.abs(r - emptyPos.r);
+                    const dc = Math.abs(c - emptyPos.c);
+                    const isAdjacentToEmpty = (dr === 1 && dc === 0) || (dr === 0 && dc === 1);
+                    
+                    // Tiles that can be slid are: non-empty, and adjacent to empty slot
+                    if (isAdjacentToEmpty && key !== '0') {
+                        tileDiv.classList.add('can-slide');
+                    }
+                    
+                    // --- Custom Styling based on Game State ---
+                    
+                    // Gate Position: r=3, c=3
+                    if (r === gatePos.r && c === gatePos.c) {
+                        if (!isExitUnlocked) {
+                             // Stage 1: Target for the Magic Item
+                            tileDiv.classList.add('target-spell');
+                            if (key === '0') {
+                                // If the empty spot is the gate, show target icon
+                                contentDiv.textContent = '🎯'; 
+                            } else if (key !== 'M') {
+                                // If it's another tile, show target icon next to the content
+                                contentDiv.textContent = `${def.display} 🎯`;
+                            }
+                        } else {
+                            // Stage 2: Unlocked Exit for Alibaba
+                            tileDiv.classList.add('exit-unlocked');
+                            if (key === '0') { 
+                                contentDiv.textContent = '🚪'; 
+                            }
+                            tileDiv.classList.remove('target-spell'); // Ensure purple is removed
+                        }
+                    }
+
+                    // Only add click listener to movable tiles (Non-empty)
+                    if (key !== '0') {
+                        tileDiv.addEventListener('click', () => handleSlide(r, c));
+                    }
+                    
+                    gridContainer.appendChild(tileDiv);
+                }
+            }
+        }
+        
+        function displayMessage(msg, className = 'bg-gray-700 text-gray-200') {
+            messageElement.className = `font-semibold p-2 rounded-lg ${className}`;
+            messageElement.innerHTML = msg; 
+        }
+
+        function displayModal(title, message, headerClass) {
+            const modalHTML = `
+                <div class="modal">
+                    <div class="bg-white p-8 rounded-lg shadow-2xl text-center text-gray-900 w-11/12 max-w-sm">
+                        <h3 class="text-2xl font-black mb-4 p-2 rounded-lg ${headerClass} text-white">${title}</h3>
+                        <p class="mb-6">${message}</p>
+                        <button onclick="initializeGame()" class="control-button bg-blue-600 hover:bg-blue-700 w-full">다시 도전하기</button>
+                    </div>
+                </div>
+            `;
+            gameModal.innerHTML = modalHTML;
+        }
+
+        function closeModal() {
+            gameModal.innerHTML = '';
+        }
+
+        // --- Event Listeners ---
+        resetButton.addEventListener('click', initializeGame);
+
+        // --- Initialize Game ---
+        window.onload = initializeGame;
+    </script>
+</body>
+</html>

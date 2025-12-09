@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>알리바바의 긴급 탈출: Act 3 (지니의 도움)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap');
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #2c2c2c;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        #game-container {
+            background-color: #1a1a1a;
+            border: 6px solid #0ea5e9; /* Act 3: Genie's Blue/Cyan Theme */
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.7);
+            border-radius: 16px;
+            padding: 20px;
+            color: white;
+            max-width: 400px;
+            width: 100%;
+            transition: all 0.3s ease-in-out;
+        }
+        #status-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding: 10px 15px;
+            background-color: #333;
+            border-radius: 8px;
+            box-shadow: inset 0 0 5px rgba(255, 255, 255, 0.1);
+        }
+        #timer {
+            font-size: 1.8rem;
+            font-weight: 900;
+            color: #ffeb3b;
+            min-width: 40px;
+            text-align: right;
+        }
+        #message {
+            min-height: 60px;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 1rem;
+            text-align: center;
+            margin-bottom: 15px;
+            font-weight: 700;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #grid-container {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 5px;
+            margin: 0 auto;
+        }
+        
+        .tile {
+            width: 100%;
+            padding-top: 100%;
+            height: 0;
+            position: relative;
+            display: block;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: transform 0.2s, background-color 0.2s;
+            user-select: none;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+        }
+        
+        .tile-content {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 28px;
+        }
+        
+        /* --- Tile Definitions --- */
+        .tile.player { background-color: #e53e3e; color: white; border: 3px solid #f6ad55; animation: pulse 1s infinite alternate; }
+        .tile.path-stone { background-color: #4a5568; color: #cbd5e0; border: 2px solid #555; }
+        .tile.empty { background-color: #1a1a1a; cursor: default; box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.8); border: 1px dashed #444; }
+        
+        /* --- Exit Styles (Fixed at Bottom Right) --- */
+        /* Active Exit (Gold Border) - Applied to whatever tile is at (3,3) */
+        .tile.exit-active-marker { 
+            border: 4px solid #ffeb3b; /* Gold */
+            box-shadow: 0 0 15px #ffd700;
+            animation: glow 1.5s infinite alternate; 
+        }
+        .tile.exit-active-marker .tile-content::after {
+            content: '🚪';
+            position: absolute;
+            bottom: 2px;
+            right: 2px;
+            font-size: 14px;
+        }
+        /* When A is successfully on the exit tile */
+        .tile.player-on-exit {
+            background-color: #27ae60 !important; /* Greenish for success */
+            border: 4px solid #ffeb3b !important;
+            box-shadow: 0 0 10px #ffd700, 0 0 20px #ffd700;
+        }
+
+        /* Interactions */
+        .tile:not(.empty):hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+        }
+        .tile.can-slide { border: 3px solid #00bfff; }
+        
+        /* --- 제거된 스타일 ---
+        .tile.can-enter-exit { border: 4px solid #38aa69 !important; transform: scale(1.05); cursor: grab; }
+        */
+
+        @keyframes pulse { from { transform: scale(1); } to { transform: scale(1.03); } }
+        @keyframes glow { from { box-shadow: 0 0 5px #ffeb3b, 0 0 10px #ffeb3b; } to { box-shadow: 0 0 10px #ffd700, 0 0 20px #ffd700; } }
+
+        .modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background-color: rgba(0, 0, 0, 0.8); display: flex; 
+            justify-content: center; align-items: center; z-index: 1000;
+        }
+    </style>
+</head>
+<body class="selection:bg-yellow-300 selection:text-gray-800">
+
+    <div id="game-container">
+        <h1 class="text-3xl font-black text-center text-sky-400 mb-2">🧞‍♂️ Act 3: 지니의 도움</h1>
+        <p class="text-sm text-center text-gray-400 mb-4">지니가 출구를 열어주었습니다! 알리바바를 **우측 하단 출구**로 바로 이동시키세요.</p>
+
+        <div id="status-bar">
+            <span class="text-sm font-medium text-gray-300">시간 제한:</span>
+            <span id="timer">∞</span> <!-- 무제한 표시 -->
+        </div>
+
+        <div id="message" class="bg-gray-700 text-gray-200"></div>
+
+        <div id="grid-container"></div>
+
+        <div id="controls-buttons" class="mt-5">
+            <button id="reset-button" class="control-button w-full bg-sky-700 hover:bg-sky-800 text-white p-3 rounded-lg font-bold shadow-lg transition duration-150">🔄 게임 재시작</button>
+        </div>
+    </div>
+    
+    <div id="game-modal"></div>
+
+    <script>
+        // 상수 정의
+        const GRID_SIZE = 4;
+        const EXIT_POS = { r: 3, c: 3 }; 
+        
+        // 게임 상태 변수
+        let grid = [];
+        let playerPos = { r: 0, c: 0 };
+        let emptyPos = { r: 0, c: 0 };
+        let isExitUnlocked = true; // Act 3: Always Unlocked
+        let timerInterval;
+        let isGameActive = false;
+
+        // 타일 정의 (주문 타일 없이 A, S, 0 만 사용)
+        const TILE_DEFS = {
+            'A': { display: 'A', class: 'player' },
+            'S': { display: '🗿', class: 'path-stone' },
+            '0': { display: '', class: 'empty' }
+        };
+
+        // DOM 요소 캐시
+        const gridContainer = document.getElementById('grid-container');
+        const messageElement = document.getElementById('message');
+        const timerElement = document.getElementById('timer');
+        const resetButton = document.getElementById('reset-button');
+        const gameModal = document.getElementById('game-modal');
+
+        /**
+         * 게임 초기 상태를 설정합니다.
+         */
+        function initializeGame() {
+            stopTimer();
+            isGameActive = true;
+            isExitUnlocked = true; 
+            
+            // 시간 무제한 설정
+            timerElement.textContent = "∞";
+            timerElement.classList.remove('text-red-500');
+            
+            grid = generateSolvableGrid();
+            drawGrid();
+            startTimer(); // 타이머는 무제한 상태로 유지
+            
+            displayMessage('타일을 밀어 알리바바(A)를 황금색 출구(🚪)로 이동시키세요.', 'bg-gray-700 text-gray-200');
+            closeModal();
+        }
+
+        /**
+         * 퍼즐의 초기 배치를 생성합니다.
+         * @returns {string[][]} 초기 그리드 배열
+         */
+        function generateSolvableGrid() {
+            // 타일 구성: A(1), 0(1), S(14) = 16개 (주문 타일 없음)
+            let requiredTiles = ['A', '0'];
+            for(let i=0; i<14; i++) requiredTiles.push('S');
+
+            // 섞기
+            requiredTiles.sort(() => Math.random() - 0.5);
+
+            let currentGrid = [];
+            let idx = 0;
+            for (let r = 0; r < GRID_SIZE; r++) {
+                currentGrid[r] = [];
+                for (let c = 0; c < GRID_SIZE; c++) {
+                    let tile = requiredTiles[idx++];
+                    currentGrid[r][c] = tile;
+                    if (tile === 'A') playerPos = { r, c };
+                    if (tile === '0') emptyPos = { r, c };
+                }
+            }
+            return currentGrid;
+        }
+
+        /**
+         * 타이머를 시작/유지합니다. (Act 3에서는 무제한)
+         */
+        function startTimer() {
+            stopTimer();
+            // 무제한이므로 시간 감소 로직 제거
+            timerInterval = setInterval(() => {
+                if (!isGameActive) return;
+            }, 1000);
+        }
+
+        /**
+         * 타이머를 멈춥니다.
+         */
+        function stopTimer() {
+            clearInterval(timerInterval);
+        }
+
+        /**
+         * 타일 슬라이딩 및 승리 조건을 처리합니다.
+         * @param {number} r 클릭된 타일의 행 인덱스
+         * @param {number} c 클릭된 타일의 열 인덱스
+         */
+        function handleSlide(r, c) {
+            if (!isGameActive) return;
+
+            const tileKey = grid[r][c];
+            
+            // --- Win Condition Check: 알리바바가 활성화된 출구로 "특수 이동"할 때 ---
+            if (isExitUnlocked && tileKey === 'A') {
+                const dr = Math.abs(playerPos.r - EXIT_POS.r);
+                const dc = Math.abs(playerPos.c - EXIT_POS.c);
+                // 알리바바가 출구 (3,3)에 인접한 위치에 있는지 확인
+                const isAdjacentToExit = (dr === 1 && dc === 0) || (dr === 0 && dc === 1);
+
+                if (isAdjacentToExit) {
+                    // 승리 처리 (A가 출구로 들어감)
+                    grid[EXIT_POS.r][EXIT_POS.c] = 'A'; 
+                    grid[playerPos.r][playerPos.c] = '0'; // A가 있던 자리는 빈칸이 됨
+                    drawGrid();
+                    handleWin(`🎉 탈출 성공! 지니의 도움으로 동굴을 쉽게 빠져나왔습니다!`);
+                    return;
+                }
+            }
+
+            // --- Standard Sliding Logic ---
+            if (tileKey === '0') return; // 빈칸은 클릭해도 아무 일 없음
+
+            // 빈칸과 클릭된 타일의 인접성 확인
+            const dr = Math.abs(r - emptyPos.r);
+            const dc = Math.abs(c - emptyPos.c);
+            const isAdjacent = (dr === 1 && dc === 0) || (dr === 0 && dc === 1);
+
+            if (isAdjacent) {
+                // 타일과 빈칸 위치 교환 (슬라이딩)
+                const newEmptyPos = { r, c };
+                const newPlayerPos = { r: emptyPos.r, c: emptyPos.c };
+
+                grid[emptyPos.r][emptyPos.c] = tileKey;
+                grid[r][c] = '0';
+                
+                if (tileKey === 'A') playerPos = newPlayerPos;
+                emptyPos = newEmptyPos;
+
+                // 알림 메시지 제거 요청에 따라 일반 메시지만 유지
+                displayMessage('타일을 밀어 알리바바를 우측 하단 출구로 이동시키세요.', 'bg-gray-700 text-gray-200');
+                
+                drawGrid();
+            } else {
+                displayMessage('빈칸 옆의 타일만 밀 수 있습니다.', 'bg-gray-700 text-gray-200');
+            }
+        }
+
+        /**
+         * 게임 보드를 화면에 그립니다.
+         */
+        function drawGrid() {
+            gridContainer.innerHTML = '';
+            for (let r = 0; r < GRID_SIZE; r++) {
+                for (let c = 0; c < GRID_SIZE; c++) {
+                    const key = grid[r][c];
+                    const def = TILE_DEFS[key] || TILE_DEFS['0'];
+                    const tileDiv = document.createElement('div');
+                    tileDiv.className = `tile ${def.class}`;
+                    
+                    // 1. 출구 마커 표시 (3,3 위치) - 항상 황금색 활성화 상태
+                    if (r === EXIT_POS.r && c === EXIT_POS.c) {
+                        tileDiv.classList.add('exit-active-marker'); 
+                        
+                        // 2. 알리바바가 출구 위치에 있으면 승리 연출
+                        if (key === 'A') {
+                            tileDiv.classList.remove('player');
+                            tileDiv.classList.add('player-on-exit');
+                        }
+                    }
+
+                    // 3. 알리바바 탈출 가능 표시 제거 (can-enter-exit 클래스 제거)
+                    /*
+                    if (key === 'A') {
+                        const dr = Math.abs(r - EXIT_POS.r);
+                        const dc = Math.abs(c - EXIT_POS.c);
+                        if ((dr === 1 && dc === 0) || (dr === 0 && dc === 1)) {
+                            tileDiv.classList.add('can-enter-exit'); 
+                        }
+                    }
+                    */
+
+                    const contentDiv = document.createElement('div');
+                    contentDiv.className = 'tile-content';
+                    contentDiv.textContent = def.display;
+                    tileDiv.appendChild(contentDiv);
+
+                    // 슬라이드 가능 표시 (파란색 테두리)
+                    const dr = Math.abs(r - emptyPos.r);
+                    const dc = Math.abs(c - emptyPos.c);
+                    const isAdjacent = (dr === 1 && dc === 0) || (dr === 0 && dc === 1);
+                    
+                    if (isAdjacent && key !== '0') {
+                        tileDiv.classList.add('can-slide');
+                    }
+
+                    tileDiv.addEventListener('click', () => handleSlide(r, c));
+                    gridContainer.appendChild(tileDiv);
+                }
+            }
+        }
+
+        /**
+         * 상태 메시지를 표시합니다.
+         * @param {string} msg 표시할 메시지
+         * @param {string} className Tailwind CSS 클래스
+         */
+        function displayMessage(msg, className) {
+            messageElement.className = `font-semibold p-2 rounded-lg ${className}`;
+            messageElement.innerHTML = msg;
+        }
+
+        /**
+         * 승리 시 게임 종료 처리를 합니다.
+         * @param {string} msg 모달에 표시할 메시지
+         */
+        function handleWin(msg) {
+            isGameActive = false;
+            stopTimer();
+            displayModal('탈출 성공!', msg, 'bg-green-600');
+        }
+
+        // 게임 오버는 시간 무제한으로 사용되지 않음
+
+        /**
+         * 모달 창을 표시합니다.
+         * @param {string} title 모달 제목
+         * @param {string} msg 모달 내용
+         * @param {string} headerClass 모달 헤더 배경색 클래스
+         */
+        function displayModal(title, msg, headerClass) {
+            gameModal.innerHTML = `
+                <div class="modal">
+                    <div class="bg-white p-8 rounded-lg text-center w-11/12 max-w-sm text-gray-900">
+                        <h3 class="text-2xl font-black mb-4 p-2 rounded ${headerClass} text-white">${title}</h3>
+                        <p class="mb-6">${msg}</p>
+                        <button onclick="initializeGame()" class="control-button w-full bg-sky-700 text-white p-3 rounded font-bold">다시 도전</button>
+                    </div>
+                </div>`;
+        }
+
+        /**
+         * 모달 창을 닫습니다.
+         */
+        function closeModal() { gameModal.innerHTML = ''; }
+
+        // 이벤트 리스너
+        resetButton.addEventListener('click', initializeGame);
+        window.onload = initializeGame;
+    </script>
+</body>
+</html>

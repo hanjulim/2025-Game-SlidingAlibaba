@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>알리바바의 긴급 탈출: Act 2 (OPEN 정렬)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap');
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #2c2c2c;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        #game-container {
+            background-color: #1a1a1a;
+            border: 6px solid #8e44ad;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.7);
+            border-radius: 16px;
+            padding: 20px;
+            color: white;
+            max-width: 400px;
+            width: 100%;
+            transition: all 0.3s ease-in-out;
+        }
+        #status-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding: 10px 15px;
+            background-color: #333;
+            border-radius: 8px;
+            box-shadow: inset 0 0 5px rgba(255, 255, 255, 0.1);
+        }
+        #timer {
+            font-size: 1.8rem;
+            font-weight: 900;
+            color: #ffeb3b;
+            min-width: 40px;
+            text-align: right;
+        }
+        #message {
+            min-height: 60px;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 1rem;
+            text-align: center;
+            margin-bottom: 15px;
+            font-weight: 700;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #grid-container {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 5px;
+            margin: 0 auto;
+        }
+        
+        .tile {
+            width: 100%;
+            padding-top: 100%;
+            height: 0;
+            position: relative;
+            display: block;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: transform 0.2s, background-color 0.2s;
+            user-select: none;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+        }
+        
+        .tile-content {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 28px;
+        }
+        
+        /* --- Tile Definitions --- */
+        .tile.player { background-color: #e53e3e; color: white; border: 3px solid #f6ad55; animation: pulse 1s infinite alternate; }
+        .tile.path-stone { background-color: #4a5568; color: #cbd5e0; border: 2px solid #555; }
+        .tile.empty { background-color: #1a1a1a; cursor: default; box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.8); border: 1px dashed #444; }
+        
+        /* O, P, E, N Tiles */
+        .tile.spell-char { background-color: #3f51b5; color: #e8eaf6; border: 2px solid #7986cb; }
+        
+        /* Order Target Highlight (Top Row) */
+        .tile.order-target {
+            border: 3px dashed #d6bcfa;
+        }
+        
+        /* Completed Order Highlight */
+        .tile.order-complete {
+            background-color: #6b46c1;
+            border: 3px solid #d6bcfa;
+            color: #fff;
+            box-shadow: 0 0 10px #9f7aea;
+        }
+
+        /* --- Exit Styles (Fixed at Bottom Right) --- */
+        /* Phase 1: Inactive Exit Marker */
+        .tile.exit-inactive-marker {
+            border: 4px solid #8e44ad; /* Purple */
+            box-shadow: inset 0 0 10px #8e44ad;
+        }
+        .tile.exit-inactive-marker .tile-content::after {
+            content: '🎯';
+            position: absolute;
+            bottom: 2px;
+            right: 2px;
+            font-size: 12px;
+        }
+
+        /* Phase 2: Active Exit Marker (Gold Border) - Applied to whatever tile is at (3,3) */
+        .tile.exit-active-marker { 
+            border: 4px solid #ffeb3b; /* Gold */
+            box-shadow: 0 0 10px #ffd700, 0 0 20px #ffd700;
+            animation: glow 1.5s infinite alternate; 
+        }
+        .tile.exit-active-marker .tile-content::after {
+            content: '🚪';
+            position: absolute;
+            bottom: 2px;
+            right: 2px;
+            font-size: 14px;
+        }
+        /* When A is on the exit tile */
+        .tile.player-on-exit {
+            background-color: #27ae60 !important; /* Greenish for success */
+            border: 4px solid #ffeb3b !important;
+            box-shadow: 0 0 10px #ffd700, 0 0 20px #ffd700;
+        }
+
+
+        /* Interactions */
+        .tile:not(.empty):hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+        }
+        .tile.can-slide { border: 3px solid #00bfff; }
+        
+        @keyframes pulse { from { transform: scale(1); } to { transform: scale(1.03); } }
+        @keyframes glow { from { box-shadow: 0 0 5px #ffeb3b, 0 0 10px #ffeb3b; } to { box-shadow: 0 0 10px #ffd700, 0 0 20px #ffd700; } }
+
+        .modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background-color: rgba(0, 0, 0, 0.8); display: flex; 
+            justify-content: center; align-items: center; z-index: 1000;
+        }
+    </style>
+</head>
+<body class="selection:bg-yellow-300 selection:text-gray-800">
+
+    <div id="game-container">
+        <h1 class="text-3xl font-black text-center text-purple-400 mb-2">🏃 Act 2: 주문 조합</h1>
+        <p class="text-sm text-center text-gray-400 mb-4">윗줄 맨 앞에서부터 **'O-P-E-N'** 순서로 타일을 나열하세요.</p>
+
+        <div id="status-bar">
+            <span class="text-sm font-medium text-gray-300">도적 도착까지:</span>
+            <span id="timer">120</span><span class="text-gray-300">초</span>
+        </div>
+
+        <div id="message" class="bg-gray-700 text-gray-200"></div>
+
+        <div id="grid-container"></div>
+
+        <div id="controls-buttons" class="mt-5">
+            <button id="reset-button" class="control-button w-full bg-purple-700 hover:bg-purple-800 text-white p-3 rounded-lg font-bold shadow-lg transition duration-150">🔄 게임 재시작</button>
+        </div>
+    </div>
+    
+    <div id="game-modal"></div>
+
+    <script>
+        const GRID_SIZE = 4;
+        const INITIAL_TIME = 120; // 2분
+        
+        // 고정된 출구 위치 (우측 하단)
+        const EXIT_POS = { r: 3, c: 3 }; 
+        
+        // 정렬해야 할 목표 위치와 값
+        const TARGET_ORDER = [
+            { r: 0, c: 0, val: 'O' },
+            { r: 0, c: 1, val: 'P' },
+            { r: 0, c: 2, val: 'E' },
+            { r: 0, c: 3, val: 'N' }
+        ];
+
+        let grid = [];
+        let playerPos = { r: 0, c: 0 };
+        let emptyPos = { r: 0, c: 0 };
+        let isExitUnlocked = false;
+        let timerInterval;
+        let timeLeft = INITIAL_TIME;
+        let isGameActive = false;
+
+        const TILE_DEFS = {
+            'A': { display: 'A', class: 'player' },
+            'O': { display: 'O', class: 'spell-char' },
+            'P': { display: 'P', class: 'spell-char' },
+            'E': { display: 'E', class: 'spell-char' },
+            'N': { display: 'N', class: 'spell-char' },
+            'S': { display: '🗿', class: 'path-stone' },
+            '0': { display: '', class: 'empty' }
+        };
+
+        const gridContainer = document.getElementById('grid-container');
+        const messageElement = document.getElementById('message');
+        const timerElement = document.getElementById('timer');
+        const resetButton = document.getElementById('reset-button');
+        const gameModal = document.getElementById('game-modal');
+
+        function initializeGame() {
+            stopTimer();
+            isGameActive = true;
+            isExitUnlocked = false;
+            timeLeft = INITIAL_TIME;
+            
+            timerElement.textContent = timeLeft;
+            timerElement.classList.remove('text-red-500');
+            
+            grid = generateSolvableGrid();
+            drawGrid();
+            startTimer();
+            displayMessage('🔠 **1단계: 맨 윗줄에 O, P, E, N 순서대로 타일을 배치하세요.**', 'bg-purple-900 text-white');
+            closeModal();
+        }
+
+        function generateSolvableGrid() {
+            // 타일 구성: A(1), O(1), P(1), E(1), N(1), 0(1), S(10) = 16개
+            let requiredTiles = ['A', 'O', 'P', 'E', 'N', '0'];
+            for(let i=0; i<10; i++) requiredTiles.push('S');
+
+            // 섞기
+            requiredTiles.sort(() => Math.random() - 0.5);
+
+            let currentGrid = [];
+            let idx = 0;
+            for (let r = 0; r < GRID_SIZE; r++) {
+                currentGrid[r] = [];
+                for (let c = 0; c < GRID_SIZE; c++) {
+                    let tile = requiredTiles[idx++];
+                    currentGrid[r][c] = tile;
+                    if (tile === 'A') playerPos = { r, c };
+                    if (tile === '0') emptyPos = { r, c };
+                }
+            }
+            return currentGrid;
+        }
+
+        function startTimer() {
+            stopTimer();
+            timerInterval = setInterval(() => {
+                if (!isGameActive) return;
+                timeLeft--;
+                timerElement.textContent = timeLeft;
+                if (timeLeft <= 10) timerElement.classList.add('text-red-500');
+                if (timeLeft <= 0) handleGameOver('시간 초과! 도적들에게 발각되었습니다.');
+            }, 1000);
+        }
+
+        function stopTimer() {
+            clearInterval(timerInterval);
+        }
+
+        function handleSlide(r, c) {
+            if (!isGameActive) return;
+
+            const tileKey = grid[r][c];
+            if (tileKey === '0') return; // 빈칸 클릭 무시
+
+            const dr = Math.abs(r - emptyPos.r);
+            const dc = Math.abs(c - emptyPos.c);
+            const isAdjacent = (dr === 1 && dc === 0) || (dr === 0 && dc === 1);
+
+            if (isAdjacent) {
+                // 1. Swap the tile with the empty spot
+                grid[emptyPos.r][emptyPos.c] = tileKey;
+                grid[r][c] = '0';
+                
+                if (tileKey === 'A') playerPos = { r: emptyPos.r, c: emptyPos.c };
+                emptyPos = { r: r, c: c };
+
+                // 2. Check Win Condition
+                if (isExitUnlocked && playerPos.r === EXIT_POS.r && playerPos.c === EXIT_POS.c) {
+                    // 알리바바가 (3,3) 출구 위치에 도착하면 승리
+                    drawGrid();
+                    handleWin(`🎉 탈출 성공! 주문을 완성하고 동굴을 빠져나왔습니다! (남은 시간: ${timeLeft}초)`);
+                    return;
+                }
+
+                // 3. Check Spell Order (Phase 1)
+                if (!isExitUnlocked) {
+                    checkSpellOrder();
+                } else {
+                    displayMessage('🚪 **2단계: 알리바바(A)를 황금색 출구(3,3)로 밀어 넣으세요!**', 'bg-green-600 text-white');
+                }
+                
+                drawGrid();
+            } else {
+                displayMessage('빈칸 옆의 타일만 밀 수 있습니다.', 'bg-gray-700 text-gray-200');
+            }
+        }
+
+        function checkSpellOrder() {
+            let isMatch = true;
+            for (let i = 0; i < TARGET_ORDER.length; i++) {
+                const target = TARGET_ORDER[i];
+                if (grid[target.r][target.c] !== target.val) {
+                    isMatch = false;
+                    break;
+                }
+            }
+
+            if (isMatch) {
+                // IMPORTANT: 맵 변화 없음. isExitUnlocked 상태만 변경.
+                isExitUnlocked = true;
+                displayMessage('✅ **주문 완성!** 우측 하단 출구(🚪)가 활성화되었습니다! 알리바바를 그 자리로 이동시키세요!', 'bg-green-600 text-white');
+            }
+        }
+
+        function drawGrid() {
+            gridContainer.innerHTML = '';
+            for (let r = 0; r < GRID_SIZE; r++) {
+                for (let c = 0; c < GRID_SIZE; c++) {
+                    const key = grid[r][c];
+                    const def = TILE_DEFS[key] || TILE_DEFS['0'];
+                    const tileDiv = document.createElement('div');
+                    tileDiv.className = `tile ${def.class}`;
+                    
+                    // 1. 주문 타겟 위치 표시 (Phase 1)
+                    if (!isExitUnlocked && r === 0) {
+                        tileDiv.classList.add('order-target');
+                    }
+                    // 2. 완성된 주문 타일 표시
+                    if (isExitUnlocked && r === 0) {
+                        tileDiv.classList.add('order-complete');
+                    }
+
+                    // 3. 출구 마커 표시 (3,3 위치)
+                    if (r === EXIT_POS.r && c === EXIT_POS.c) {
+                        if (isExitUnlocked) {
+                            tileDiv.classList.add('exit-active-marker'); // 황금색
+                        } else {
+                            tileDiv.classList.add('exit-inactive-marker'); // 보라색
+                        }
+                        
+                        // 4. 알리바바가 출구 위치에 있으면 특별 강조 (승리 직전/직후 상태)
+                        if (key === 'A') {
+                            tileDiv.classList.remove('player');
+                            tileDiv.classList.add('player-on-exit');
+                        }
+                    }
+
+                    const contentDiv = document.createElement('div');
+                    contentDiv.className = 'tile-content';
+                    contentDiv.textContent = def.display;
+                    tileDiv.appendChild(contentDiv);
+
+                    // 슬라이드 가능 표시
+                    const dr = Math.abs(r - emptyPos.r);
+                    const dc = Math.abs(c - emptyPos.c);
+                    const isAdjacent = (dr === 1 && dc === 0) || (dr === 0 && dc === 1);
+                    
+                    if (isAdjacent && key !== '0') {
+                        tileDiv.classList.add('can-slide');
+                    }
+
+                    tileDiv.addEventListener('click', () => handleSlide(r, c));
+                    gridContainer.appendChild(tileDiv);
+                }
+            }
+        }
+
+        function displayMessage(msg, className) {
+            messageElement.className = `font-semibold p-2 rounded-lg ${className}`;
+            messageElement.innerHTML = msg;
+        }
+
+        function handleWin(msg) {
+            isGameActive = false;
+            stopTimer();
+            displayModal('탈출 성공!', msg, 'bg-green-600');
+        }
+
+        function handleGameOver(msg) {
+            isGameActive = false;
+            stopTimer();
+            displayModal('게임 오버', msg, 'bg-red-700');
+        }
+
+        function displayModal(title, msg, headerClass) {
+            gameModal.innerHTML = `
+                <div class="modal">
+                    <div class="bg-white p-8 rounded-lg text-center w-11/12 max-w-sm text-gray-900">
+                        <h3 class="text-2xl font-black mb-4 p-2 rounded ${headerClass} text-white">${title}</h3>
+                        <p class="mb-6">${msg}</p>
+                        <button onclick="initializeGame()" class="control-button w-full bg-purple-700 text-white p-3 rounded font-bold">다시 도전</button>
+                    </div>
+                </div>`;
+        }
+
+        function closeModal() { gameModal.innerHTML = ''; }
+
+        resetButton.addEventListener('click', initializeGame);
+        window.onload = initializeGame;
+    </script>
+</body>
+</html>

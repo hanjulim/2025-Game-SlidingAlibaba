@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>알리바바의 긴급 탈출: Act 4 (무한 루프)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Creepster&display=swap');
+
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #2b0a0a;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        #game-container {
+            background-color: #1a0505;
+            border: 6px solid #b91c1c;
+            box-shadow: 0 0 40px rgba(220, 38, 38, 0.6);
+            border-radius: 16px;
+            padding: 20px;
+            color: white;
+            max-width: 400px;
+            width: 100%;
+            transition: all 0.3s ease-in-out;
+        }
+        #status-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding: 10px 15px;
+            background-color: #450a0a;
+            border-radius: 8px;
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+        #timer {
+            font-size: 1.8rem;
+            font-weight: 900;
+            color: #ef4444;
+            min-width: 40px;
+            text-align: right;
+        }
+        #message {
+            min-height: 60px;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 1rem;
+            text-align: center;
+            margin-bottom: 15px;
+            font-weight: 700;
+            border: 1px solid #7f1d1d;
+            background-color: #450a0a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fca5a5;
+        }
+        #grid-container {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 5px;
+            margin: 0 auto;
+        }
+        
+        .tile {
+            width: 100%;
+            padding-top: 100%;
+            height: 0;
+            position: relative;
+            display: block;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: transform 0.2s, background-color 0.2s;
+            user-select: none;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.6);
+        }
+        
+        .tile-content {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 24px;
+        }
+        
+        /* --- Tile Definitions --- */
+        .tile.player { 
+            background-color: #e53e3e; 
+            color: white; 
+            border: 3px solid #f6ad55; 
+            animation: pulse 1s infinite alternate; 
+        }
+        
+        .tile.empty { background-color: #0f0303; cursor: default; box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.9); border: 1px dashed #7f1d1d; }
+        
+        .tile.spell-char { 
+            background-color: #581c87; 
+            color: #e9d5ff; 
+            border: 2px solid #a855f7; 
+            font-family: 'Creepster', cursive; 
+        }
+        
+        .tile.chaos {
+            background-color: #000;
+            color: #ff00ff;
+            border: 3px solid #ff00ff;
+            box-shadow: 0 0 15px #ff00ff;
+            animation: chaosSpin 3s linear infinite;
+        }
+        
+        .tile.order-target {
+            border: 2px dashed #f87171;
+        }
+        
+        .tile.order-complete {
+            background-color: #991b1b;
+            border: 2px solid #fca5a5;
+            color: #fff;
+        }
+
+        /* --- Exit Styles --- */
+        .tile.exit-inactive-marker .tile-content::after {
+            content: '🎯';
+            position: absolute;
+            bottom: 2px;
+            right: 2px;
+            font-size: 10px;
+        }
+
+        .tile.exit-active { 
+            border: 4px solid #ffeb3b; 
+            box-shadow: 0 0 20px #ffeb3b;
+            animation: glow 0.5s infinite alternate; 
+            cursor: default;
+        }
+        .tile.exit-active .tile-content::after {
+            content: '🚪';
+            position: absolute;
+            bottom: 2px;
+            right: 2px;
+            font-size: 14px;
+        }
+        
+        .tile.player-on-exit {
+            background-color: #f59e0b !important;
+            border: 4px solid #fff !important;
+            box-shadow: 0 0 20px #fff;
+        }
+
+        .tile.can-slide { border: 2px solid #ef4444; }
+
+        @keyframes pulse { from { transform: scale(1); } to { transform: scale(1.03); } }
+        @keyframes glow { from { box-shadow: 0 0 5px #ffeb3b, 0 0 10px #ffeb3b; } to { box-shadow: 0 0 15px #ffeb3b, 0 0 30px #ffeb3b; } }
+        @keyframes chaosSpin { 
+            0% { border-color: #ff00ff; box-shadow: 0 0 10px #ff00ff; }
+            50% { border-color: #00ffff; box-shadow: 0 0 20px #00ffff; }
+            100% { border-color: #ff00ff; box-shadow: 0 0 10px #ff00ff; }
+        }
+
+        .modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background-color: rgba(0, 0, 0, 0.9); display: flex; 
+            justify-content: center; align-items: center; z-index: 1000;
+        }
+        
+        .chaos-effect {
+            animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+        }
+        
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-2px, 0, 0); }
+            20%, 80% { transform: translate3d(4px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-8px, 0, 0); }
+            40%, 60% { transform: translate3d(8px, 0, 0); }
+        }
+    </style>
+</head>
+<body class="selection:bg-red-900 selection:text-white">
+
+    <div id="game-container">
+        <h1 class="text-3xl font-black text-center text-red-500 mb-2">☠️ Act 4: 무한 루프</h1>
+        <p class="text-xs text-center text-red-300 mb-4">"FOREVER CAGED!"를 완성하세요. <br>카오스 타일(🌀)은 30초마다 주변을 섞습니다.</p>
+
+        <div id="status-bar">
+            <span class="text-sm font-medium text-red-300">남은 시간:</span>
+            <span id="timer">300</span><span class="text-red-300">초</span>
+        </div>
+
+        <div id="message" class="text-sm"></div>
+
+        <div id="grid-container"></div>
+
+        <div id="controls-buttons" class="mt-5">
+            <button id="reset-button" class="control-button w-full bg-red-800 hover:bg-red-700 text-white p-3 rounded-lg font-bold shadow-lg transition duration-150 border border-red-500">🔄 고통의 굴레 재시작</button>
+        </div>
+    </div>
+    
+    <div id="game-modal"></div>
+
+    <script>
+        // 상수 정의
+        const GRID_SIZE = 4;
+        const INITIAL_TIME = 300; // 5 minutes
+        const CHAOS_INTERVAL_TIME = 30000; // 30 seconds
+        
+        // 목표 주문: FOREVER CAGED!
+        const SPELL_STRING = "FOREVERCAGED!";
+        const TARGET_MAP = [
+            {r:0, c:0, v:'F'}, {r:0, c:1, v:'O'}, {r:0, c:2, v:'R'}, {r:0, c:3, v:'E'},
+            {r:1, c:0, v:'V'}, {r:1, c:1, v:'E'}, {r:1, c:2, v:'R'}, {r:1, c:3, v:'C'},
+            {r:2, c:0, v:'A'}, {r:2, c:1, v:'G'}, {r:2, c:2, v:'E'}, {r:2, c:3, v:'D'},
+            {r:3, c:0, v:'!'}
+        ];
+        
+        // 고정된 출구 위치 (우측 하단)
+        const EXIT_POS = { r: 3, c: 3 }; 
+
+        // 게임 상태 변수
+        let grid = [];
+        let playerPos = { r: 0, c: 0 };
+        let emptyPos = { r: 0, c: 0 };
+        let chaosPos = { r: 0, c: 0 };
+        let isExitUnlocked = false;
+        let timerInterval;
+        let chaosInterval;
+        let timeLeft = INITIAL_TIME;
+        let isGameActive = false;
+
+        // 타일 정의
+        const TILE_DEFS = {
+            'PLAYER': { display: 'A', class: 'player' }, 
+            '0': { display: '', class: 'empty' },
+            'C_TILE': { display: '🌀', class: 'chaos' }, 
+            'EXIT': { display: '🚪', class: 'exit-active' },
+        };
+
+        // DOM 요소 캐싱
+        const gridContainer = document.getElementById('grid-container');
+        const messageElement = document.getElementById('message');
+        const timerElement = document.getElementById('timer');
+        const resetButton = document.getElementById('reset-button');
+        const gameModal = document.getElementById('game-modal');
+        const gameContainer = document.getElementById('game-container');
+
+        // 게임 초기화
+        function initializeGame() {
+            stopTimer();
+            stopChaosTimer();
+            isGameActive = true;
+            isExitUnlocked = false;
+            timeLeft = INITIAL_TIME;
+            
+            timerElement.textContent = timeLeft;
+            timerElement.classList.remove('animate-pulse');
+            
+            grid = generateSolvableGrid();
+            drawGrid();
+            startTimer();
+            startChaosTimer();
+            
+            displayMessage('🔥 **"FOREVER CAGED!"** 주문을 순서대로 완성하여 탈출구를 여세요. (5분)', 'text-red-200');
+            closeModal();
+        }
+
+        // 초기 그리드 생성 및 위치 설정
+        function generateSolvableGrid() {
+            let tiles = SPELL_STRING.split('');
+            tiles.push('PLAYER');
+            tiles.push('C_TILE');
+            tiles.push('0');
+
+            tiles.sort(() => Math.random() - 0.5);
+
+            let currentGrid = [];
+            let idx = 0;
+            for (let r = 0; r < GRID_SIZE; r++) {
+                currentGrid[r] = [];
+                for (let c = 0; c < GRID_SIZE; c++) {
+                    let tile = tiles[idx++];
+                    currentGrid[r][c] = tile;
+                    
+                    if (tile === 'PLAYER') playerPos = { r, c };
+                    if (tile === '0') emptyPos = { r, c };
+                    if (tile === 'C_TILE') chaosPos = { r, c };
+                }
+            }
+            
+            // 플레이어가 카오스 타일 옆에서 시작하는 것 방지
+            if (isAdjacent(playerPos, chaosPos)) {
+                return generateSolvableGrid();
+            }
+
+            return currentGrid;
+        }
+
+        function startTimer() {
+            timerInterval = setInterval(() => {
+                if (!isGameActive) return;
+                timeLeft--;
+                timerElement.textContent = timeLeft;
+                
+                if (timeLeft <= 30) timerElement.classList.add('animate-pulse');
+                else timerElement.classList.remove('animate-pulse');
+
+                if (timeLeft <= 0) handleGameOver('시간이 다 되었습니다. 영원히 갇혀버렸습니다.');
+            }, 1000);
+        }
+
+        function startChaosTimer() {
+            chaosInterval = setInterval(() => {
+                if (!isGameActive) return;
+                triggerChaosShuffle();
+            }, CHAOS_INTERVAL_TIME);
+        }
+
+        function stopTimer() {
+            clearInterval(timerInterval);
+        }
+        
+        function stopChaosTimer() {
+            clearInterval(chaosInterval);
+        }
+
+        /**
+         * 주문이 완성된 타일(ORDER_COMPLETE)인지 확인하는 헬퍼 함수
+         */
+        function isOrderComplete(r, c) {
+            if (isExitUnlocked) return false; 
+
+            const target = TARGET_MAP.find(t => t.r === r && t.c === c);
+            if (target && grid[r][c] === target.v) {
+                return true; 
+            }
+            return false;
+        }
+
+        // 카오스 타일 주변 타일 섞기 로직 (8방향, 완성 타일 제외)
+        function triggerChaosShuffle() {
+            if (isExitUnlocked) return; 
+
+            const r = chaosPos.r;
+            const c = chaosPos.c;
+            let neighbors = [];
+            
+            // 카오스 타일 주변 8개 타일 수집
+            for(let i=-1; i<=1; i++) {
+                for(let j=-1; j<=1; j++) {
+                    if (i===0 && j===0) continue;
+                    let nr = r + i;
+                    let nc = c + j;
+                    
+                    if (nr >=0 && nr < GRID_SIZE && nc >= 0 && nc < GRID_SIZE) {
+                        // **완성된 타일은 셔플에서 제외**
+                        if (!isOrderComplete(nr, nc)) {
+                            neighbors.push({r: nr, c: nc, val: grid[nr][nc]});
+                        }
+                    }
+                }
+            }
+            
+            if (neighbors.length === 0) return;
+
+            let values = neighbors.map(n => n.val);
+            values.sort(() => Math.random() - 0.5);
+            
+            neighbors.forEach((n, idx) => {
+                grid[n.r][n.c] = values[idx];
+                if (values[idx] === 'PLAYER') playerPos = { r: n.r, c: n.c };
+                if (values[idx] === '0') emptyPos = { r: n.r, c: n.c };
+            });
+
+            gameContainer.classList.add('chaos-effect');
+            setTimeout(() => gameContainer.classList.remove('chaos-effect'), 500);
+            
+            displayMessage('🌀 **지니의 저주!** 카오스 타일 주변이 뒤섞였으나, 완성된 타일은 고정되었습니다!', 'text-purple-400');
+            drawGrid();
+            
+            checkSpellOrder();
+        }
+
+        function isAdjacent(pos1, pos2) {
+            const dr = Math.abs(pos1.r - pos2.r);
+            const dc = Math.abs(pos1.c - pos2.c);
+            return (dr === 1 && dc === 0) || (dr === 0 && dc === 1);
+        }
+
+        // 타일 슬라이딩 처리
+        function handleSlide(r, c) {
+            if (!isGameActive) return;
+
+            // **수정됨: 완성된 타일도 슬라이딩은 가능하도록 제한 제거**
+            // if (isOrderComplete(r, c)) return; 
+
+            const tileKey = grid[r][c]; 
+            
+            if (tileKey === '0' || !isAdjacent({r,c}, emptyPos)) return;
+
+            const oldEmptyPos = { ...emptyPos };
+            const newEmptyPos = { r, c }; 
+            
+            // 1. 타일 스왑
+            grid[oldEmptyPos.r][oldEmptyPos.c] = tileKey; 
+            grid[newEmptyPos.r][newEmptyPos.c] = '0';    
+            
+            // 2. 특수 타일 위치 업데이트
+            if (tileKey === 'PLAYER') playerPos = { r: oldEmptyPos.r, c: oldEmptyPos.c };
+            if (tileKey === 'C_TILE') chaosPos = { r: oldEmptyPos.r, c: oldEmptyPos.c };
+            
+            // 3. 빈칸 위치 업데이트
+            emptyPos = newEmptyPos;
+            
+            let won = false;
+
+            // 4. 주문 확인 (1단계)
+            const wasUnlocked = isExitUnlocked;
+            checkSpellOrder(); 
+            
+            // 5. 승리 확인 (2단계)
+            if (isExitUnlocked && playerPos.r === EXIT_POS.r && playerPos.c === EXIT_POS.c) {
+                won = true;
+            }
+
+            if (won) {
+                drawGrid(); 
+                const winMessage = !wasUnlocked ? 
+                    `🎉 주문과 함께 탈출! 지니는 당신의 계산된 움직임에 놀랐습니다. (남은 시간: ${timeLeft}초)` :
+                    `🎉 탈출 성공! (남은 시간: ${timeLeft}초)`;
+                handleWin(winMessage);
+                return;
+            }
+            
+            // 6. 메시지 업데이트
+            if (isExitUnlocked) {
+                displayMessage('🚪 **출구 활성화!** 알리바바(붉은 A)를 우측 하단으로 대피시키세요!', 'text-yellow-400');
+            } else {
+                 displayMessage('🔥 **"FOREVER CAGED!"** 주문을 순서대로 완성하여 탈출구를 여세요. (5분)', 'text-red-200');
+            }
+            
+            drawGrid();
+        }
+
+        // 주문 순서 일치 여부 확인
+        function checkSpellOrder() {
+            let isMatch = true;
+            for (let target of TARGET_MAP) {
+                if (grid[target.r][target.c] !== target.v) {
+                    isMatch = false;
+                    break;
+                }
+            }
+
+            if (isMatch) {
+                if (!isExitUnlocked) { 
+                    isExitUnlocked = true;
+                    stopChaosTimer();
+                    displayMessage('🔓 **주문 완성!** 카오스가 멈추고 출구가 열렸습니다!', 'text-green-400');
+                }
+            }
+        }
+
+        function drawGrid() {
+            gridContainer.innerHTML = '';
+            for (let r = 0; r < GRID_SIZE; r++) {
+                for (let c = 0; c < GRID_SIZE; c++) {
+                    const key = grid[r][c];
+                    let def = TILE_DEFS[key];
+                    
+                    if (!def && key.length === 1) {
+                        def = { display: key, class: 'spell-char' };
+                    }
+                    if (!def) def = TILE_DEFS['0']; 
+
+                    const tileDiv = document.createElement('div');
+                    tileDiv.className = `tile ${def.class}`;
+                    
+                    // 1단계: 주문 목표 표시 및 완성 표시
+                    if (!isExitUnlocked) {
+                        const target = TARGET_MAP.find(t => t.r === r && t.c === c);
+                        if (target) {
+                            tileDiv.classList.add('order-target');
+                            if (grid[r][c] === target.v) {
+                                tileDiv.classList.remove('order-target');
+                                tileDiv.classList.add('order-complete');
+                            }
+                        }
+                    }
+
+                    // 2단계: 고정된 출구 마커 표시 (Exit_Pos: 3, 3)
+                    if (r === EXIT_POS.r && c === EXIT_POS.c) {
+                        if (isExitUnlocked) {
+                            tileDiv.classList.add('exit-active');
+                            if (grid[r][c] === 'PLAYER') {
+                                tileDiv.classList.add('player-on-exit');
+                            }
+                        } else {
+                            tileDiv.classList.add('exit-inactive-marker');
+                        }
+                    }
+
+                    const contentDiv = document.createElement('div');
+                    contentDiv.className = 'tile-content';
+                    contentDiv.textContent = def.display;
+                    tileDiv.appendChild(contentDiv);
+
+                    // 슬라이드 가능 표시 (수정됨: 완성된 타일도 슬라이드 가능하도록 조건 완화)
+                    if (isAdjacent({r,c}, emptyPos) && key !== '0') {
+                        tileDiv.classList.add('can-slide');
+                    }
+
+                    tileDiv.addEventListener('click', () => handleSlide(r, c));
+                    gridContainer.appendChild(tileDiv);
+                }
+            }
+        }
+
+        function displayMessage(msg, className) {
+            messageElement.className = `font-semibold p-2 rounded-lg ${className}`;
+            messageElement.innerHTML = msg;
+        }
+
+        function handleWin(msg) {
+            isGameActive = false;
+            stopTimer();
+            stopChaosTimer();
+            displayModal('END OF LOOP?', msg, 'bg-red-900');
+        }
+
+        function handleGameOver(msg) {
+            isGameActive = false;
+            stopTimer();
+            stopChaosTimer();
+            displayModal('GAME OVER', msg, 'bg-black');
+        }
+
+        function displayModal(title, msg, headerClass) {
+            gameModal.innerHTML = `
+                <div class="modal">
+                    <div class="bg-black border-2 border-red-800 p-8 rounded-lg text-center w-11/12 max-w-sm text-red-100 shadow-[0_0_20px_rgba(220,38,38,0.5)]">
+                        <h3 class="text-3xl font-black mb-4 p-2 rounded ${headerClass} text-white font-['Creepster']">${title}</h3>
+                        <p class="mb-6 text-lg">${msg}</p>
+                        <button onclick="initializeGame()" class="control-button w-full bg-red-900 hover:bg-red-800 text-white p-3 rounded font-bold border border-red-500">다시 고통받기</button>
+                    </div>
+                </div>`;
+        }
+
+        function closeModal() { gameModal.innerHTML = ''; }
+
+        resetButton.addEventListener('click', initializeGame);
+        window.onload = initializeGame;
+    </script>
+</body>
+</html>
