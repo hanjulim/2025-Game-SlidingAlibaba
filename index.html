@@ -3,72 +3,214 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>알리바바의 긴급 탈출: Act 선택</title>
+    <title>Sliding Ali Baba - 메인 표지</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap');
+        
+        /* 1. 전체 배경 스타일 (기존 Act 선택 화면 배경 유지) */
         body {
             font-family: 'Noto Sans KR', sans-serif;
             background-color: #0d0d0d;
-            /* 이 경로는 image_84ef7b.jpg 파일이 루트에 있어야 정상 작동합니다. */
             background-image: url('image_84ef7b.jpg'); 
             background-size: cover;
             background-attachment: fixed;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
         }
-        .card {
+
+        /* 2. 표지 이미지 및 컨테이너 스타일 */
+        #splash-screen {
+            background-color: rgba(0, 0, 0, 0.7); /* 표지 화면 뒤 배경 어둡게 */
+            padding: 20px;
+            border-radius: 16px;
+            max-width: 600px;
+            width: 90%;
+            box-shadow: 0 0 50px rgba(249, 115, 22, 0.8);
+            text-align: center;
+            transition: opacity 1s ease-in-out;
+            /* 표지 화면은 flex로 중앙 정렬을 유지합니다. */
+            display: flex; 
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #splash-image {
+            width: 100%;
+            height: auto;
+            border-radius: 12px;
+            border: 3px solid #f97316;
+            margin-bottom: 20px;
+        }
+
+        /* 3. PLAY 버튼 스타일 */
+        #play-button {
+            background-color: #f97316; /* 오렌지색 배경 */
+            color: #1a1a1a;
+            font-size: 2rem;
+            font-weight: 900;
+            padding: 1rem 3rem;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 0 20px #fcd34d, 0 8px #d97706; /* 그림자 및 3D 효과 */
+            transition: all 0.15s ease;
+            text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.5);
+        }
+
+        #play-button:active {
+            box-shadow: 0 0 10px #fcd34d, 0 4px #d97706;
+            transform: translateY(4px);
+        }
+
+        /* 4. Act 선택 메뉴 스타일 */
+        #act-selection {
+            /* 처음에는 숨겨져 있다가, Play 버튼 클릭 시 나타납니다. */
+            display: none; 
             background-color: rgba(10, 0, 0, 0.9);
             border: 4px solid #f97316;
             box-shadow: 0 0 50px rgba(249, 115, 22, 0.8);
+            padding: 40px; /* 여백 조정 */
+            border-radius: 16px;
+            max-width: 600px;
+            width: 90%;
+            text-align: center;
+            color: white;
+            opacity: 0;
+            transition: opacity 1s ease-in-out;
+            position: absolute; /* 중앙 정렬 유지를 위해 absolute 사용 */
+            z-index: 10;
         }
-        .act-button {
+
+        .act-button-link {
             transition: all 0.2s;
             border-bottom: 4px solid;
-            font-weight: 700; /* Bold */
+            font-weight: 700;
         }
-        .act-button:hover {
+        .act-button-link:hover {
             transform: translateY(-3px);
             box-shadow: 0 10px 20px rgba(249, 115, 22, 0.4);
         }
+
+        /* 5. 돌아가기 버튼 스타일 */
+        #back-button {
+            transition: all 0.2s;
+            background-color: #374151; /* Gray-700 */
+            border-bottom: 3px solid #1f2937; /* Gray-800 */
+        }
+        #back-button:hover {
+            background-color: #4b5563; /* Gray-600 */
+            transform: translateY(-1px);
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.3);
+        }
     </style>
 </head>
-<body class="flex items-center justify-center min-h-screen p-6">
-    <div class="card p-8 md:p-10 rounded-xl text-white max-w-lg w-full text-center">
+<body>
+
+    <!-- 1. 표지 화면 (초기 로딩 화면) -->
+    <div id="splash-screen">
+        <img id="splash-image" src="표지.png" alt="Sliding Ali Baba 게임 표지">
+        
+        <button id="play-button" onclick="showActSelection()">
+            PLAY
+        </button>
+    </div>
+
+    <!-- 2. Act 선택 메뉴 (PLAY 버튼 클릭 시 활성화) -->
+    <div id="act-selection">
         <h1 class="text-4xl font-black mb-2 text-red-500">알리바바의 긴급 탈출</h1>
-        <h2 class="text-xl font-light mb-8 text-amber-300">멘토링 데모 버전 (Act 선택)</h2>
+        <h2 class="text-xl font-light mb-8 text-amber-300"></h2>
 
         <div class="space-y-4">
             <!-- Act 1 연결 (파일명: SlidingAlibaba_ACT1.html) -->
-            <a href="SlidingAlibaba_ACT1" class="block">
-                <button class="act-button w-full p-4 rounded-lg text-lg bg-gray-700 hover:bg-gray-600 text-white border-gray-500">
+            <a href="SlidingAlibaba_ACT1.html" class="block">
+                <button class="act-button-link w-full p-4 rounded-lg text-lg bg-gray-700 hover:bg-gray-600 text-white border-gray-500">
                     Act 1: 위험한 시작
                 </button>
             </a>
 
             <!-- Act 2 연결 (파일명: SlidingAlibaba_ACT2_ver2.html) -->
-            <a href="SlidingAlibaba_ACT2_ver2" class="block">
-                <button class="act-button w-full p-4 rounded-lg text-lg bg-gray-700 hover:bg-gray-600 text-white border-gray-500">
-                    Act 2: 마법사의 시련 (Ver. 2)
+            <a href="SlidingAlibaba_ACT2_ver2.html" class="block">
+                <button class="act-button-link w-full p-4 rounded-lg text-lg bg-gray-700 hover:bg-gray-600 text-white border-gray-500">
+                    Act 2: 마법사의 시련
                 </button>
             </a>
             
             <!-- Act 3 연결 (파일명: SlidingAlibaba_ACT3.html) -->
-            <a href="SlidingAlibaba_ACT3" class="block">
-                <button class="act-button w-full p-4 rounded-lg text-lg bg-gray-700 hover:bg-gray-600 text-white border-gray-500">
+            <a href="SlidingAlibaba_ACT3.html" class="block">
+                <button class="act-button-link w-full p-4 rounded-lg text-lg bg-gray-700 hover:bg-gray-600 text-white border-gray-500">
                     Act 3: 시간의 압박
                 </button>
             </a>
 
-            <!-- Act 4 연결 (파일명: SlidingAlibaba_ACT4_ver1.html) - 멘토링 집중 버전 -->
-            <a href="SlidingAlibaba_ACT4_ver1" class="block">
-                <button class="act-button w-full p-4 rounded-lg font-black text-xl bg-red-800 hover:bg-red-700 text-white border-red-500 shadow-xl">
-                    🔥 Act 4: 무한 루프
+            <!-- Act 4 연결 (파일명: SlidingAlibaba_ACT4_ver1.html) -->
+            <a href="SlidingAlibaba_ACT4_ver1.html" class="block">
+                <button class="act-button-link w-full p-4 rounded-lg font-black text-xl bg-red-800 hover:bg-red-700 text-white border-red-500 shadow-xl">
+                    🔥 Act 4: 무한 루프 (최종 버전 1)
                 </button>
             </a>
         </div>
+        
+        <div class="mt-8 pt-4 border-t border-gray-700">
+            <!-- 표지 화면으로 돌아가는 버튼 추가 -->
+            <button id="back-button" onclick="showSplashScreen()" class="w-full p-3 rounded-lg text-sm text-gray-200">
+                표지로 돌아가기 (Return to Cover)
+            </button>
+        </div>
 
-        <p class="text-xs mt-8 text-gray-400">
-            멘토링을 위해 파일명을 일치시켰습니다. 각 Act를 클릭하여 플레이해주세요.
+        <p class="text-xs mt-4 text-gray-400">
+            게임을 시작하려면 위 Act 중 하나를 선택해 주세요.
         </p>
     </div>
+
+    <script>
+        const splashScreen = document.getElementById('splash-screen');
+        const actSelection = document.getElementById('act-selection');
+        
+        /**
+         * Play 버튼 클릭 시: 표지 화면을 숨기고 Act 선택 메뉴를 표시합니다.
+         */
+        function showActSelection() {
+            // 1. 표지 화면을 부드럽게 숨깁니다.
+            splashScreen.style.opacity = '0';
+            
+            setTimeout(() => {
+                splashScreen.style.display = 'none';
+                
+                // 2. Act 선택 메뉴를 중앙에 표시합니다.
+                actSelection.style.display = 'block';
+                
+                // 3. 부드럽게 나타나도록 opacity를 1로 변경합니다.
+                setTimeout(() => {
+                    actSelection.style.opacity = '1';
+                }, 50); // 약간의 딜레이 후 opacity 변경
+                
+            }, 1000); // 1초 동안 opacity 애니메이션 실행
+        }
+        
+        /**
+         * '표지로 돌아가기' 버튼 클릭 시: Act 선택 메뉴를 숨기고 표지 화면을 표시합니다.
+         */
+        function showSplashScreen() {
+            // 1. Act 선택 메뉴를 부드럽게 숨깁니다.
+            actSelection.style.opacity = '0';
+            
+            setTimeout(() => {
+                actSelection.style.display = 'none';
+                
+                // 2. 표지 화면을 중앙에 표시합니다. (display: flex로 변경)
+                splashScreen.style.display = 'flex';
+                
+                // 3. 부드럽게 나타나도록 opacity를 1로 변경합니다.
+                setTimeout(() => {
+                    splashScreen.style.opacity = '1';
+                }, 50); // 약간의 딜레이 후 opacity 변경
+                
+            }, 1000); // 1초 동안 opacity 애니메이션 실행
+        }
+    </script>
 </body>
 </html>
