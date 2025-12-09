@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>알리바바의 긴급 탈출: Act 선택</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap');
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #0d0d0d;
+            /* 이 경로는 image_84ef7b.jpg 파일이 루트에 있어야 정상 작동합니다. */
+            background-image: url('image_84ef7b.jpg'); 
+            background-size: cover;
+            background-attachment: fixed;
+        }
+        .card {
+            background-color: rgba(10, 0, 0, 0.9);
+            border: 4px solid #f97316;
+            box-shadow: 0 0 50px rgba(249, 115, 22, 0.8);
+        }
+        .act-button {
+            transition: all 0.2s;
+            border-bottom: 4px solid;
+            font-weight: 700; /* Bold */
+        }
+        .act-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(249, 115, 22, 0.4);
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-6">
+    <div class="card p-8 md:p-10 rounded-xl text-white max-w-lg w-full text-center">
+        <h1 class="text-4xl font-black mb-2 text-red-500">알리바바의 긴급 탈출</h1>
+        <h2 class="text-xl font-light mb-8 text-amber-300">멘토링 데모 버전 (Act 선택)</h2>
+
+        <div class="space-y-4">
+            <!-- Act 1 연결 (파일명: SlidingAlibaba_ACT1.html) -->
+            <a href="SlidingAlibaba_ACT1" class="block">
+                <button class="act-button w-full p-4 rounded-lg text-lg bg-gray-700 hover:bg-gray-600 text-white border-gray-500">
+                    Act 1: 위험한 시작
+                </button>
+            </a>
+
+            <!-- Act 2 연결 (파일명: SlidingAlibaba_ACT2_ver2.html) -->
+            <a href="SlidingAlibaba_ACT2_ver2" class="block">
+                <button class="act-button w-full p-4 rounded-lg text-lg bg-gray-700 hover:bg-gray-600 text-white border-gray-500">
+                    Act 2: 마법사의 시련 (Ver. 2)
+                </button>
+            </a>
+            
+            <!-- Act 3 연결 (파일명: SlidingAlibaba_ACT3.html) -->
+            <a href="SlidingAlibaba_ACT3" class="block">
+                <button class="act-button w-full p-4 rounded-lg text-lg bg-gray-700 hover:bg-gray-600 text-white border-gray-500">
+                    Act 3: 시간의 압박
+                </button>
+            </a>
+
+            <!-- Act 4 연결 (파일명: SlidingAlibaba_ACT4.html) - 멘토링 집중 버전 -->
+            <a href="SlidingAlibaba_ACT4" class="block">
+                <button class="act-button w-full p-4 rounded-lg font-black text-xl bg-red-800 hover:bg-red-700 text-white border-red-500 shadow-xl">
+                    🔥 Act 4: 무한 루프 (멘토링 집중 버전)
+                </button>
+            </a>
+        </div>
+
+        <p class="text-xs mt-8 text-gray-400">
+            멘토링을 위해 파일명을 일치시켰습니다. 각 Act를 클릭하여 플레이해주세요.
+        </p>
+    </div>
+</body>
+</html>
