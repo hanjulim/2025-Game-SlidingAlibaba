@@ -12,6 +12,7 @@
         body {
             font-family: 'Noto Sans KR', sans-serif;
             background-color: #0d0d0d;
+            /* 참고: 'image_84ef7b.jpg' 파일은 배경 이미지로 사용됩니다. */
             background-image: url('image_84ef7b.jpg'); 
             background-size: cover;
             background-attachment: fixed;
@@ -112,7 +113,8 @@
 
     <!-- 1. 표지 화면 (초기 로딩 화면) -->
     <div id="splash-screen">
-        <img id="splash-image" src="표지.png" alt="Sliding Ali Baba 게임 표지">
+        <!-- 파일명을 'mainCover.png'로 최종 변경했습니다. -->
+        <img id="splash-image" src="mainCover.png" alt="Sliding Ali Baba 게임 표지">
         
         <button id="play-button" onclick="showActSelection()">
             PLAY
@@ -122,7 +124,7 @@
     <!-- 2. Act 선택 메뉴 (PLAY 버튼 클릭 시 활성화) -->
     <div id="act-selection">
         <h1 class="text-4xl font-black mb-2 text-red-500">알리바바의 긴급 탈출</h1>
-        <h2 class="text-xl font-light mb-8 text-amber-300"></h2>
+        <h2 class="text-xl font-light mb-8 text-amber-300">멘토링 데모 버전 (Act 선택)</h2>
 
         <div class="space-y-4">
             <!-- Act 1 연결 (파일명: SlidingAlibaba_ACT1.html) -->
@@ -135,7 +137,7 @@
             <!-- Act 2 연결 (파일명: SlidingAlibaba_ACT2_ver2.html) -->
             <a href="SlidingAlibaba_ACT2_ver2.html" class="block">
                 <button class="act-button-link w-full p-4 rounded-lg text-lg bg-gray-700 hover:bg-gray-600 text-white border-gray-500">
-                    Act 2: 마법사의 시련
+                    Act 2: 마법사의 시련 (Ver. 2)
                 </button>
             </a>
             
