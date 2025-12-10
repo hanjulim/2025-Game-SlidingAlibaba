@@ -107,7 +107,11 @@
         /* === END TILE SIZE MODIFICATION === */
         
         /* Tile Styles */
-        .tile.player { background-color: #e53e3e; color: white; border: 3px solid #f6ad55; animation: pulse 1s infinite alternate; } /* Alibaba (A) */
+        .tile.player { 
+		background-color: #e53e3e; color: white; border: 3px solid #f6ad55; animation: pulse 1s infinite alternate;
+	    background-image: url('Alibaba.png');
+ 	    background-size: cover;
+            background-position: center; } /* Alibaba (A) */
         
         /* === [START] 사용자 요청 반영: normalRock.png 배경 이미지 적용 === */
         .tile.path-stone { 
@@ -119,7 +123,11 @@
         } /* Path (P) */
         /* === [END] 사용자 요청 반영 === */
         
-        .tile.magic-item { background-color: #3f51b5; color: #e8eaf6; border: 2px solid #7986cb; } /* 주문 물품 (M) */
+        .tile.magic-item {  
+ 	    background-size: cover;
+            background-position: center;
+	    background-image: url('Spell.png');
+	    background-color: #3f51b5; color: #e8eaf6; border: 2px solid #7986cb; } /* 주문 물품 (M) */
         
         /* Empty tile styles */
         .tile.empty { 
@@ -212,9 +220,18 @@
             <!-- Grid will be populated by JavaScript -->
         </div>
 
-        <div id="controls-buttons" class="mt-5">
-            <button id="reset-button" class="control-button w-full">🔄 게임 재시작</button>
-        </div>
+        <div id="controls-buttons" class="mt-5 flex gap-4">
+        <!-- 왼쪽 버튼: Act 선택으로 돌아가기 -->
+        <button onclick="handleActSelection()" id="act-select-button" 
+                class="control-button flex-1 bg-indigo-700 hover:bg-indigo-600 text-white p-3 rounded-lg font-bold shadow-lg transition duration-150 border border-indigo-500">
+            🚪 Act 선택으로<br>돌아가기
+        </button>
+        <!-- 오른쪽 버튼: 재시작 (원래 기능 유지) -->
+        <button id="reset-button" 
+                class="control-button flex-1 bg-brightyellow-800 hover:bg-brightyellow-700 text-white p-3 rounded-lg font-bold shadow-lg transition duration-150 border border-red-500">
+            🔄 게임 재시작
+        </button>
+    </div>
     </div>
     
     <!-- Win/Lose Modal Placeholder -->
@@ -238,8 +255,8 @@
 
         // Tile Definitions
         const TILE_DEFS = {
-            'A': { display: 'A', class: 'player', type: 'player' },      // Alibaba
-            'M': { display: '✨', class: 'magic-item', type: 'magic-item' }, // 주문 물품 (Magic Item/Key)
+            'A': { display: '', class: 'player', type: 'player' },      // Alibaba
+            'M': { display: '', class: 'magic-item', type: 'magic-item' }, // 주문 물품 (Magic Item/Key)
             'P': { display: '', class: 'path-stone', type: 'path' },      // 경로 타일 (Path Stone/New Obstacle)
             '0': { display: '', class: 'empty', type: 'empty' },          // 빈칸 (Empty Slot)
         };
@@ -272,6 +289,10 @@
             displayMessage('🚪 **1단계: 주문 물품(✨)을 출구 목표 지점(보라색)으로 밀어 넣어 활성화하세요.**', 'bg-red-700 text-white');
             closeModal();
         }
+	
+	function handleActSelection() {
+    		window.location.href = "index.html#act_select"; 
+	}
 
         /**
          * Generates a 4x4 grid with randomly placed A, M, 0, ensuring they are not at the fixed gatePos.
