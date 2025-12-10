@@ -108,8 +108,11 @@
         /* --- Tile Definitions --- */
         .tile.player { 
             background-color: #e53e3e; 
+ 	    background-size: cover;
+            background-position: center;
             color: white; 
             border: 3px solid #f6ad55; 
+	    background-image: url('Alibaba.png');
         }
         
         .tile.empty { background-color: #0f0303; cursor: default; box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.9); border: 1px dashed #7f1d1d; }
@@ -132,18 +135,14 @@
         .tile.spell-A { background-image: url('A.png'); }
         .tile.spell-G { background-image: url('G.png'); }
         .tile.spell-D { background-image: url('D.png'); }
-        //.tile.spell-! { background-image: url('!.png'); }
-        
-        .tile.spell-exclamation { 
-            background-image: none; /* 이미지 대체 텍스트를 위해 배경 이미지 제거 */
-            background-color: #6d28d9; /* 짙은 보라색 배경 */
-            border: 3px solid #f9fafb; /* 흰색 테두리로 강조 */
-            color: white; /* 텍스트는 흰색으로 */
-        } 
-
+        .tile.spell-exclamation  { background-image: url('Exclam.png'); }
+     
         .tile.chaos {
             background-color: #000;
             color: #ff00ff;
+	    background-image: url('chaos.png');
+            background-size: cover;
+            background-position: center;
             border: 3px solid #ff00ff;
             box-shadow: 0 0 15px #ff00ff;
             animation: chaosSpin 3s linear infinite;
@@ -233,11 +232,10 @@
 
         <div id="controls-buttons" class="mt-5 flex gap-4">
         <!-- 왼쪽 버튼: Act 선택으로 돌아가기 -->
-        <button id="act-select-button" 
+        <button onclick="handleActSelection()" id="act-select-button" 
                 class="control-button flex-1 bg-indigo-700 hover:bg-indigo-600 text-white p-3 rounded-lg font-bold shadow-lg transition duration-150 border border-indigo-500">
             🚪 Act 선택으로<br>돌아가기
         </button>
-        
         <!-- 오른쪽 버튼: 재시작 (원래 기능 유지) -->
         <button id="reset-button" 
                 class="control-button flex-1 bg-red-800 hover:bg-red-700 text-white p-3 rounded-lg font-bold shadow-lg transition duration-150 border border-red-500">
@@ -279,9 +277,9 @@
 
         // 타일 정의
         const TILE_DEFS = {
-            'PLAYER': { display: 'A', class: 'player' }, 
+            'PLAYER': { display: '', class: 'player' }, 
             '0': { display: '', class: 'empty' },
-            'C_TILE': { display: '🌀', class: 'chaos' }, 
+            'C_TILE': { display: '', class: 'chaos' }, 
             'EXIT': { display: '🚪', class: 'exit-active' },
             // 알파벳 타일은 drawGrid에서 동적으로 처리됨
         };
@@ -303,6 +301,10 @@
         function isExclamationTile(key) {
             return key === '!';
         }
+
+	function handleActSelection() {
+    		window.location.href = "index.html#act_select"; 
+	}
 
         // 게임 초기화
         function initializeGame() {
@@ -546,7 +548,7 @@
                             def = { display: '', class: `spell-${key}` };
                         } else if (isExclamationTile(key)) {
                             // 느낌표 타일 (따로 처리)
-                             def = { display: '!', class: 'spell-exclamation' };
+                             def = { display: '', class: 'spell-exclamation' };
                         } else {
                              def = TILE_DEFS['0'];
                         }
