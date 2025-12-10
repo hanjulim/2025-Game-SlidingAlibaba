@@ -96,7 +96,14 @@
         }
         
         /* --- Tile Definitions --- */
-        .tile.player { background-color: #e53e3e; color: white; border: 3px solid #f6ad55; animation: pulse 1s infinite alternate; }
+        .tile.player { 
+	    background-color: #e53e3e; 
+ 	    background-size: cover;
+            background-position: center;
+            color: white; 
+            border: 3px solid #f6ad55; 
+	    background-image: url('Alibaba.png');
+	}
         .tile.path-stone { 
 	    background-image: url('normalRock.png'); /* normalRock.png 대체 */
             background-size: cover;
@@ -165,14 +172,14 @@
 
         <div id="controls-buttons" class="mt-5 flex gap-4">
         <!-- 왼쪽 버튼: Act 선택으로 돌아가기 (줄바꿈 적용) -->
-        <button id="act-select-button" 
+        <button onclick="handleActSelection()" id="act-select-button" 
                 class="control-button flex-1 bg-indigo-700 hover:bg-indigo-600 text-white p-3 rounded-lg font-bold shadow-lg transition duration-150 border border-indigo-500 text-sm md:text-base">
             🚪 Act 선택으로 <br> 돌아가기
         </button>
         
         <!-- 오른쪽 버튼: 재시작 (줄바꿈 적용) -->
         <button id="reset-button" 
-                class="control-button flex-1 bg-red-800 hover:bg-red-700 text-white p-3 rounded-lg font-bold shadow-lg transition duration-150 border border-red-500 text-sm md:text-base">
+                class="control-button flex-1 bg-cyan-800 hover:bg-cyan-700 text-white p-3 rounded-lg font-bold shadow-lg transition duration-150 border border-cyan-500 text-sm md:text-base">
             🔄 게임 재시작
         </button>
     </div>
@@ -195,7 +202,7 @@
 
         // 타일 정의 (주문 타일 없이 A, S, 0 만 사용)
         const TILE_DEFS = {
-            'A': { display: 'A', class: 'player' },
+            'A': { display: '', class: 'player' },
             'S': { display: '', class: 'path-stone' },
             '0': { display: '', class: 'empty' }
         };
@@ -226,6 +233,10 @@
             displayMessage('타일을 밀어 알리바바(A)를 황금색 출구(🚪)로 이동시키세요.', 'bg-gray-700 text-gray-200');
             closeModal();
         }
+
+	function handleActSelection() {
+    		window.location.href = "index.html#act_select"; 
+	}
 
         /**
          * 퍼즐의 초기 배치를 생성합니다.
