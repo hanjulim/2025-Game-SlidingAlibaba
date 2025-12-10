@@ -12,7 +12,6 @@
         body {
             font-family: 'Noto Sans KR', sans-serif;
             background-color: #0d0d0d;
-            /* 참고: 'image_84ef7b.jpg' 파일은 배경 이미지로 사용됩니다. */
             background-image: url('image_84ef7b.jpg'); 
             background-size: cover;
             background-attachment: fixed;
@@ -33,11 +32,11 @@
             box-shadow: 0 0 50px rgba(249, 115, 22, 0.8);
             text-align: center;
             transition: opacity 1s ease-in-out;
-            /* 표지 화면은 flex로 중앙 정렬을 유지합니다. */
             display: flex; 
             flex-direction: column;
             align-items: center;
             justify-content: center;
+            position: relative; /* 자식 요소(오버레이 버튼)의 기준이 됨 */
         }
 
         #splash-image {
@@ -45,36 +44,30 @@
             height: auto;
             border-radius: 12px;
             border: 3px solid #f97316;
-            margin-bottom: 20px;
+            margin-bottom: 0; /* 이미지 아래에 버튼이 없으므로 마진 제거 */
+            display: block;
         }
 
-        /* 3. PLAY 버튼 스타일 */
-        #play-button {
-            background-color: #f97316; /* 오렌지색 배경 */
-            color: #1a1a1a;
-            font-size: 2rem;
-            font-weight: 900;
-            padding: 1rem 3rem;
-            border-radius: 50px;
+        /* 3. 이미지 위에 겹쳐지는 투명한 PLAY 버튼 영역 */
+        #play-overlay {
+            position: absolute;
+            bottom: 5%; /* 이미지 하단에서 5% 위 */
+            left: 50%;
+            transform: translateX(-50%); /* 가운데 정렬 */
+            width: 60%; /* 버튼 너비 */
+            height: 10%; /* 버튼 높이 */
             cursor: pointer;
-            box-shadow: 0 0 20px #fcd34d, 0 8px #d97706; /* 그림자 및 3D 효과 */
-            transition: all 0.15s ease;
-            text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.5);
+            z-index: 20; /* 이미지보다 위에 오도록 설정 */
+            /* border: 1px solid red; /* 디버깅용: 실제 적용 시 주석 처리 */
         }
 
-        #play-button:active {
-            box-shadow: 0 0 10px #fcd34d, 0 4px #d97706;
-            transform: translateY(4px);
-        }
-
-        /* 4. Act 선택 메뉴 스타일 */
+        /* 4. Act 선택 메뉴 스타일 (이전과 동일) */
         #act-selection {
-            /* 처음에는 숨겨져 있다가, Play 버튼 클릭 시 나타납니다. */
             display: none; 
             background-color: rgba(10, 0, 0, 0.9);
             border: 4px solid #f97316;
             box-shadow: 0 0 50px rgba(249, 115, 22, 0.8);
-            padding: 40px; /* 여백 조정 */
+            padding: 40px; 
             border-radius: 16px;
             max-width: 600px;
             width: 90%;
@@ -82,10 +75,11 @@
             color: white;
             opacity: 0;
             transition: opacity 1s ease-in-out;
-            position: absolute; /* 중앙 정렬 유지를 위해 absolute 사용 */
+            position: absolute; 
             z-index: 10;
         }
 
+        /* 5. Act 버튼 스타일 (이전과 동일) */
         .act-button-link {
             transition: all 0.2s;
             border-bottom: 4px solid;
@@ -96,16 +90,19 @@
             box-shadow: 0 10px 20px rgba(249, 115, 22, 0.4);
         }
 
-        /* 5. 돌아가기 버튼 스타일 */
-        #back-button {
+        /* 6. 아이콘 돌아가기 버튼 스타일 */
+        #back-icon-button {
             transition: all 0.2s;
-            background-color: #374151; /* Gray-700 */
-            border-bottom: 3px solid #1f2937; /* Gray-800 */
+            margin-right: 15px; /* 타이틀과의 간격 */
+            padding: 8px;
+            background-color: #374151; /* 진한 회색 배경 */
+            border-radius: 50%; /* 원형 */
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.4);
+            border: 2px solid #6b7280; /* 연한 회색 테두리 */
         }
-        #back-button:hover {
-            background-color: #4b5563; /* Gray-600 */
-            transform: translateY(-1px);
-            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.3);
+        #back-icon-button:hover {
+            background-color: #4b5563; /* 호버 시 약간 밝아짐 */
+            transform: scale(1.05);
         }
     </style>
 </head>
@@ -113,59 +110,64 @@
 
     <!-- 1. 표지 화면 (초기 로딩 화면) -->
     <div id="splash-screen">
-        <!-- 파일명을 'mainCover.png'로 최종 변경했습니다. -->
+        <!-- 이미지 위에 겹쳐지는 투명한 클릭 영역 -->
+        <div id="play-overlay" onclick="showActSelection()">
+            <!-- 투명한 영역이므로 내용물은 없습니다. -->
+        </div>
         <img id="splash-image" src="mainCover.png" alt="Sliding Ali Baba 게임 표지">
-        
-        <button id="play-button" onclick="showActSelection()">
-            PLAY
-        </button>
     </div>
 
     <!-- 2. Act 선택 메뉴 (PLAY 버튼 클릭 시 활성화) -->
     <div id="act-selection">
-        <h1 class="text-4xl font-black mb-2 text-red-500">알리바바의 긴급 탈출</h1>
-        <h2 class="text-xl font-light mb-8 text-amber-300">멘토링 데모 버전 (Act 선택)</h2>
+        
+        <div class="flex items-center justify-center mb-2">
+            <!-- 새로운 돌아가기 아이콘 버튼 -->
+            <button id="back-icon-button" onclick="showSplashScreen()" title="표지로 돌아가기">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="currentColor" class="w-6 h-6 text-white">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
+                </svg>
+            </button>
+            
+            <!-- 타이틀 -->
+            <h1 class="text-4xl font-black text-red-500">Sliding Alibaba</h1>
+        </div>
+
+        <h2 class="text-xl font-light mb-8 text-amber-300"> </h2>
 
         <div class="space-y-4">
             <!-- Act 1 연결 (파일명: SlidingAlibaba_ACT1.html) -->
             <a href="SlidingAlibaba_ACT1.html" class="block">
                 <button class="act-button-link w-full p-4 rounded-lg text-lg bg-gray-700 hover:bg-gray-600 text-white border-gray-500">
-                    Act 1: 위험한 시작
+                    Act 1: 동굴에서 탈출하라!
                 </button>
             </a>
 
             <!-- Act 2 연결 (파일명: SlidingAlibaba_ACT2_ver2.html) -->
             <a href="SlidingAlibaba_ACT2_ver2.html" class="block">
                 <button class="act-button-link w-full p-4 rounded-lg text-lg bg-gray-700 hover:bg-gray-600 text-white border-gray-500">
-                    Act 2: 마법사의 시련 (Ver. 2)
+                    Act 2: 새로운 주문을 찾아서
                 </button>
             </a>
             
             <!-- Act 3 연결 (파일명: SlidingAlibaba_ACT3.html) -->
             <a href="SlidingAlibaba_ACT3.html" class="block">
                 <button class="act-button-link w-full p-4 rounded-lg text-lg bg-gray-700 hover:bg-gray-600 text-white border-gray-500">
-                    Act 3: 시간의 압박
+                    Act 3: 지니와의 계약
                 </button>
             </a>
 
             <!-- Act 4 연결 (파일명: SlidingAlibaba_ACT4_ver1.html) -->
             <a href="SlidingAlibaba_ACT4_ver1.html" class="block">
-                <button class="act-button-link w-full p-4 rounded-lg font-black text-xl bg-red-800 hover:bg-red-700 text-white border-red-500 shadow-xl">
-                    🔥 Act 4: 무한 루프 (최종 버전 1)
+                <button class="act-button-link w-full p-4 rounded-lg text-lg bg-gray-700 hover:bg-gray-600 text-white border-gray-500">
+                    Act 4: 램프 속 무한 루프
                 </button>
-            </a>
         </div>
         
         <div class="mt-8 pt-4 border-t border-gray-700">
-            <!-- 표지 화면으로 돌아가는 버튼 추가 -->
-            <button id="back-button" onclick="showSplashScreen()" class="w-full p-3 rounded-lg text-sm text-gray-200">
-                표지로 돌아가기 (Return to Cover)
-            </button>
+            <p class="text-xs mt-4 text-gray-400">
+                게임을 시작하려면 위 Act 중 하나를 선택해 주세요.
+            </p>
         </div>
-
-        <p class="text-xs mt-4 text-gray-400">
-            게임을 시작하려면 위 Act 중 하나를 선택해 주세요.
-        </p>
     </div>
 
     <script>
