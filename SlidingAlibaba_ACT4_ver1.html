@@ -9,13 +9,19 @@
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap');
         @import url('https://fonts.googleapis.com/css2?family=Creepster&display=swap');
 
+        /* Placeholder image URL for canvas environment, replace 'playExample.png' */
+        .background-image-fallback {
+            background-image: url('https://placehold.co/1920x1080/1a1a1a/cccccc?text=Play+Area');
+        }
+
         body {
             font-family: 'Noto Sans KR', sans-serif;
-            background-image: url('background.png'); /* playExample.png 대체 */
-            background-size: cover; /* 배경 전체 덮기 */
+            /* 사용자 지정 이미지 URL을 사용할 수 있도록 원본 유지, 없으면 fallback 사용 */
+            background-image: url('background.png'), var(--background-image, url('https://placehold.co/1920x1080/1a1a1a/cccccc?text=Play+Area'));
+            background-size: cover; 
             background-position: center;
             background-attachment: fixed;
-            background-color: #2c2c2c; /* Fallback color */
+            background-color: #2c2c2c; 
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -104,18 +110,37 @@
             background-color: #e53e3e; 
             color: white; 
             border: 3px solid #f6ad55; 
-            animation: pulse 1s infinite alternate; 
         }
         
         .tile.empty { background-color: #0f0303; cursor: default; box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.9); border: 1px dashed #7f1d1d; }
         
-        .tile.spell-char { 
-            background-color: #581c87; 
-            color: #e9d5ff; 
-            border: 2px solid #a855f7; 
-            font-family: 'Creepster', cursive; 
+        /* FOREVER CAGED! Tiles - Dynamic class naming: .spell-F, .spell-O, etc. */
+        /* IMPORTANT: For image display, ensure the content is empty or transparent */
+        .tile[class*="spell-"] {
+            background-color: #1f0808;
+            background-size: cover;
+            background-position: center;
+            border: 2px solid #7986cb;
+            //color: transparent; /* 텍스트 숨기기 */
         }
+        .tile.spell-F { background-image: url('F.png'); }
+        .tile.spell-O { background-image: url('O.png'); }
+        .tile.spell-R { background-image: url('R.png'); }
+        .tile.spell-E { background-image: url('E.png'); }
+        .tile.spell-V { background-image: url('V.png'); }
+        .tile.spell-C { background-image: url('C.png'); }
+        .tile.spell-A { background-image: url('A.png'); }
+        .tile.spell-G { background-image: url('G.png'); }
+        .tile.spell-D { background-image: url('D.png'); }
+        //.tile.spell-! { background-image: url('!.png'); }
         
+        .tile.spell-exclamation { 
+            background-image: none; /* 이미지 대체 텍스트를 위해 배경 이미지 제거 */
+            background-color: #6d28d9; /* 짙은 보라색 배경 */
+            border: 3px solid #f9fafb; /* 흰색 테두리로 강조 */
+            color: white; /* 텍스트는 흰색으로 */
+        } 
+
         .tile.chaos {
             background-color: #000;
             color: #ff00ff;
@@ -248,6 +273,7 @@
             '0': { display: '', class: 'empty' },
             'C_TILE': { display: '🌀', class: 'chaos' }, 
             'EXIT': { display: '🚪', class: 'exit-active' },
+            // 알파벳 타일은 drawGrid에서 동적으로 처리됨
         };
 
         // DOM 요소 캐싱
@@ -257,6 +283,16 @@
         const resetButton = document.getElementById('reset-button');
         const gameModal = document.getElementById('game-modal');
         const gameContainer = document.getElementById('game-container');
+
+        // 헬퍼 함수: 알파벳 타일인지 확인
+        function isSpellTile(key) {
+            return key.length === 1 && key !== '0' && key !== '!' && SPELL_STRING.includes(key);
+        }
+        
+        // 헬퍼 함수: 느낌표 타일인지 확인
+        function isExclamationTile(key) {
+            return key === '!';
+        }
 
         // 게임 초기화
         function initializeGame() {
@@ -280,7 +316,9 @@
 
         // 초기 그리드 생성 및 위치 설정
         function generateSolvableGrid() {
-            let tiles = SPELL_STRING.split('');
+            // '!'에 대한 처리 추가
+            let tiles = SPELL_STRING.split('').filter(char => char !== '!');
+            tiles.push('!'); // 느낌표 추가
             tiles.push('PLAYER');
             tiles.push('C_TILE');
             tiles.push('0');
@@ -302,6 +340,7 @@
             }
             
             // 플레이어가 카오스 타일 옆에서 시작하는 것 방지
+            // 무한 루프 가능성 있으므로 재귀 횟수 제한을 두거나 셔플 후 검사하는 것이 좋음 (일단 원본 유지)
             if (isAdjacent(playerPos, chaosPos)) {
                 return generateSolvableGrid();
             }
@@ -383,6 +422,10 @@
                 grid[n.r][n.c] = values[idx];
                 if (values[idx] === 'PLAYER') playerPos = { r: n.r, c: n.c };
                 if (values[idx] === '0') emptyPos = { r: n.r, c: n.c };
+                // chaosPos는 Chaos 타일이 움직일 때만 업데이트되지만, 
+                // 이 셔플 로직에서는 Chaos 타일 자체가 움직이지 않으므로 chaosPos 업데이트는 불필요함.
+                // 단, Chaos 타일이 neighbors에 포함되어 셔플된다면 업데이트 필요.
+                // 현재 로직: neighbors는 Chaos 타일 주변 8칸이므로, Chaos 타일('C_TILE') 자체는 셔플되지 않음.
             });
 
             gameContainer.classList.add('chaos-effect');
@@ -404,34 +447,35 @@
         function handleSlide(r, c) {
             if (!isGameActive) return;
 
-            // **수정됨: 완성된 타일도 슬라이딩은 가능하도록 제한 제거**
-            // if (isOrderComplete(r, c)) return; 
-
+            // 빈칸이 아닌 타일이고, 빈칸과 인접한 경우에만 슬라이드 가능
             const tileKey = grid[r][c]; 
             
             if (tileKey === '0' || !isAdjacent({r,c}, emptyPos)) return;
 
+            // 1. 타일 스왑을 시작할 때, 완성된 타일인지 확인
+            const isCompletedBeforeMove = isOrderComplete(r, c);
+
             const oldEmptyPos = { ...emptyPos };
             const newEmptyPos = { r, c }; 
             
-            // 1. 타일 스왑
+            // 2. 타일 스왑
             grid[oldEmptyPos.r][oldEmptyPos.c] = tileKey; 
-            grid[newEmptyPos.r][newEmptyPos.c] = '0';    
+            grid[newEmptyPos.r][newEmptyPos.c] = '0'; 
             
-            // 2. 특수 타일 위치 업데이트
+            // 3. 특수 타일 위치 업데이트
             if (tileKey === 'PLAYER') playerPos = { r: oldEmptyPos.r, c: oldEmptyPos.c };
             if (tileKey === 'C_TILE') chaosPos = { r: oldEmptyPos.r, c: oldEmptyPos.c };
             
-            // 3. 빈칸 위치 업데이트
+            // 4. 빈칸 위치 업데이트
             emptyPos = newEmptyPos;
             
             let won = false;
 
-            // 4. 주문 확인 (1단계)
+            // 5. 주문 확인 (1단계)
             const wasUnlocked = isExitUnlocked;
             checkSpellOrder(); 
             
-            // 5. 승리 확인 (2단계)
+            // 6. 승리 확인 (2단계)
             if (isExitUnlocked && playerPos.r === EXIT_POS.r && playerPos.c === EXIT_POS.c) {
                 won = true;
             }
@@ -445,7 +489,7 @@
                 return;
             }
             
-            // 6. 메시지 업데이트
+            // 7. 메시지 업데이트
             if (isExitUnlocked) {
                 displayMessage('🚪 **출구 활성화!** 알리바바(붉은 A)를 우측 하단으로 대피시키세요!', 'text-yellow-400');
             } else {
@@ -471,6 +515,10 @@
                     stopChaosTimer();
                     displayMessage('🔓 **주문 완성!** 카오스가 멈추고 출구가 열렸습니다!', 'text-green-400');
                 }
+            } else {
+                // 주문이 깨졌을 경우 (필요하다면)
+                isExitUnlocked = false; 
+                // 타이머는 계속 유지
             }
         }
 
@@ -481,11 +529,20 @@
                     const key = grid[r][c];
                     let def = TILE_DEFS[key];
                     
-                    if (!def && key.length === 1) {
-                        def = { display: key, class: 'spell-char' };
-                    }
-                    if (!def) def = TILE_DEFS['0']; 
-
+                    // --- 중요 수정 사항: 알파벳 타일 클래스 추가 ---
+                    if (!def) {
+                        if (isSpellTile(key)) {
+                            // 일반 알파벳 타일 (F, O, R, E, V, C, A, G, D)
+                            def = { display: '', class: `spell-${key}` };
+                        } else if (isExclamationTile(key)) {
+                            // 느낌표 타일 (따로 처리)
+                             def = { display: '!', class: 'spell-exclamation' };
+                        } else {
+                             def = TILE_DEFS['0'];
+                        }
+                    } 
+                    // ---------------------------------------------
+                    
                     const tileDiv = document.createElement('div');
                     tileDiv.className = `tile ${def.class}`;
                     
@@ -497,6 +554,8 @@
                             if (grid[r][c] === target.v) {
                                 tileDiv.classList.remove('order-target');
                                 tileDiv.classList.add('order-complete');
+                                // 완성된 타일은 이미지 배경이 아닌, .order-complete의 배경색을 사용하도록 덮어씌움
+                                // 또한, 이 타일은 움직여도 이미지가 깨지지 않도록 (완성 상태 유지) def.display를 사용하지 않음
                             }
                         }
                     }
@@ -515,10 +574,27 @@
 
                     const contentDiv = document.createElement('div');
                     contentDiv.className = 'tile-content';
-                    contentDiv.textContent = def.display;
+                    
+                    // 완성된 주문 타일에는 텍스트를 표시하지 않음 (이미지나 완성 효과만)
+                    // PLAYER, C_TILE, EMPTY 타일은 TILE_DEFS에서 텍스트를 가져옴
+		    if (tileDiv.classList.contains('spell-exclamation')) {
+    			// 느낌표 타일은 텍스트를 표시
+    			contentDiv.textContent = def.display; // '!'가 표시됨
+    			contentDiv.style.color = 'white'; 
+		    } else if (isSpellTile(key)) {
+   		 // 다른 알파벳 타일은 배경 이미지를 위해 텍스트 숨김 (원본 유지)
+    			contentDiv.textContent = ''; 
+		    } else if (tileDiv.classList.contains('order-complete')) {
+                        contentDiv.textContent = key; // 완성 타일은 텍스트를 표시하여 구별 (선택 사항)
+                        contentDiv.style.color = 'white';
+                    } else {
+                        contentDiv.textContent = def.display;
+                    }
+
+
                     tileDiv.appendChild(contentDiv);
 
-                    // 슬라이드 가능 표시 (수정됨: 완성된 타일도 슬라이드 가능하도록 조건 완화)
+                    // 슬라이드 가능 표시
                     if (isAdjacent({r,c}, emptyPos) && key !== '0') {
                         tileDiv.classList.add('can-slide');
                     }
