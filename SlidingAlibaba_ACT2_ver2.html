@@ -96,7 +96,13 @@
         }
         
         /* --- Tile Definitions --- */
-        .tile.player { background-color: #e53e3e; color: white; border: 3px solid #f6ad55; animation: pulse 1s infinite alternate; }
+        .tile.player { background-color: #e53e3e; 
+ 	    background-size: cover;
+            background-position: center;
+            color: white; 
+            border: 3px solid #f6ad55; 
+	    background-image: url('Alibaba.png');
+	 }
         .tile.path-stone { 
 	    background-image: url('normalRock.png'); /* normalRock.png 대체 */
             background-size: cover;
@@ -220,9 +226,18 @@
 
         <div id="grid-container"></div>
 
-        <div id="controls-buttons" class="mt-5">
-            <button id="reset-button" class="control-button w-full bg-purple-700 hover:bg-purple-800 text-white p-3 rounded-lg font-bold shadow-lg transition duration-150">🔄 게임 재시작</button>
-        </div>
+        <div id="controls-buttons" class="mt-5 flex gap-4">
+        <!-- 왼쪽 버튼: Act 선택으로 돌아가기 -->
+        <button onclick="handleActSelection()" id="act-select-button" 
+                class="control-button flex-1 bg-indigo-700 hover:bg-indigo-600 text-white p-3 rounded-lg font-bold shadow-lg transition duration-150 border border-indigo-500">
+            🚪 Act 선택으로<br>돌아가기
+        </button>
+        <!-- 오른쪽 버튼: 재시작 (원래 기능 유지) -->
+        <button id="reset-button" 
+                class="control-button flex-1 bg-purple-800 hover:bg-purple-700 text-white p-3 rounded-lg font-bold shadow-lg transition duration-150 border border-purple-500">
+            🔄 게임 재시작
+        </button>
+    </div>
     </div>
     
     <div id="game-modal"></div>
@@ -251,7 +266,7 @@
         let isGameActive = false;
 
         const TILE_DEFS = {
-            'A': { display: 'A', class: 'player' },
+            'A': { display: '', class: 'player' },
             'O': { display: '', class: 'spell-O' },
             'P': { display: '', class: 'spell-P' },
             'E': { display: '', class: 'spell-E' },
@@ -281,6 +296,10 @@
             displayMessage('🔠 **1단계: 맨 윗줄에 O, P, E, N 순서대로 타일을 배치하세요.**', 'bg-purple-900 text-white');
             closeModal();
         }
+	
+	function handleActSelection() {
+    		window.location.href = "index.html#act_select"; 
+	}
 
         function generateSolvableGrid() {
             // 타일 구성: A(1), O(1), P(1), E(1), N(1), 0(1), S(10) = 16개
