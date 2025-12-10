@@ -231,9 +231,19 @@
 
         <div id="grid-container"></div>
 
-        <div id="controls-buttons" class="mt-5">
-            <button id="reset-button" class="control-button w-full bg-red-800 hover:bg-red-700 text-white p-3 rounded-lg font-bold shadow-lg transition duration-150 border border-red-500">🔄 고통의 굴레 재시작</button>
-        </div>
+        <div id="controls-buttons" class="mt-5 flex gap-4">
+        <!-- 왼쪽 버튼: Act 선택으로 돌아가기 -->
+        <button id="act-select-button" 
+                class="control-button flex-1 bg-indigo-700 hover:bg-indigo-600 text-white p-3 rounded-lg font-bold shadow-lg transition duration-150 border border-indigo-500">
+            🚪 Act 선택으로<br>돌아가기
+        </button>
+        
+        <!-- 오른쪽 버튼: 재시작 (원래 기능 유지) -->
+        <button id="reset-button" 
+                class="control-button flex-1 bg-red-800 hover:bg-red-700 text-white p-3 rounded-lg font-bold shadow-lg transition duration-150 border border-red-500">
+            🔄 고통의 굴레<br>재시작
+        </button>
+    </div>
     </div>
     
     <div id="game-modal"></div>
